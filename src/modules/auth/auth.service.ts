@@ -67,6 +67,21 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string) {
+    // Check for recent failed login attempts (last 15 minutes)
+    const recentFailures = await this.prisma.loginHistory.count({
+      where: {
+        email: loginDto.email,
+        status: 'FAILED',
+        createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) },
+      },
+    });
+
+    if (recentFailures >= 5) {
+      throw new UnauthorizedException(
+        'Account temporarily locked due to multiple failed login attempts. Try again in 15 minutes.',
+      );
+    }
+
     const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email },
     });
