@@ -1,0 +1,337 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum LegalType {
+  INDIVIDUAL    // ფიზიკური პირი
+  LEGAL_ENTITY  // იურიდიული პირი
+}
+
+enum Gender {
+  MR
+  MRS
+  MS
+  MISS
+  DR
+  MSTR
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+  VOID
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// --- USER MANAGEMENT ---
+
+model User {
+  id             String         @id @default(uuid())
+  fullName       String
+  email          String         @unique
+  password       String
+  phone          String?
+  role           Role           @default(OPERATOR)
+  status         UserStatus     @default(ACTIVE)
+  profilePicture String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  invoices       Invoice[]
+  refreshTokens  RefreshToken[]
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(500)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+// --- SELLERS (Interavia, Interco) ---
+
+model Seller {
+  id              String    @id @default(uuid())
+  legacyId        Int?      @unique
+
+  legalType       LegalType @default(LEGAL_ENTITY)
+  prefix          String    @unique @db.VarChar(10) // "IA" or "AC"
+
+  name            String
+  nameLocal       String?
+  taxId           String
+  contactPerson   String
+  email           String
+  phone           String
+  address         String    @db.Text
+  country         String    @default("Georgia")
+
+  logo            String?
+  stamp           String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  banks           Bank[]
+  invoices        Invoice[]
+
+  @@index([taxId])
+  @@map("sellers")
+}
+
+// --- BUYERS (Companies OR Individuals) ---
+
+model Buyer {
+  id              String    @id @default(uuid())
+  legacyId        Int?      @unique
+
+  legalType       LegalType @default(LEGAL_ENTITY)
+  prefix          String?   @db.VarChar(10) // "GFF" or null
+
+  name            String    // Company name OR Person full name
+  nameLocal       String?
+  taxId           String    // Company tax ID OR Personal ID
+
+  contactPerson   String
+  email           String
+  phone           String
+  address         String    @db.Text
+  country         String    @default("Georgia")
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  invoices        Invoice[]
+
+  @@index([name])
+  @@index([taxId])
+  @@map("buyers")
+}
+
+// --- BANK ACCOUNTS ---
+
+model Bank {
+  id                      String   @id @default(uuid())
+  legacyId                Int?     @unique
+
+  sellerId                String
+  seller                  Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  name                    String
+  swift                   String
+  address                 String   @db.Text
+  accountNumber           String
+
+  intermediaryBankName    String?
+  intermediaryBankSwift   String?
+
+  isDefault               Boolean  @default(false)
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  deletedAt               DateTime?
+
+  invoices                Invoice[]
+
+  @@map("banks")
+}
+
+// --- INVOICES ---
+
+model Invoice {
+  id                 String         @id @default(uuid())
+  legacyId           Int?           @unique
+
+  invoiceNumber      String         @unique // "IAGFF0648"
+
+  sellerId           String
+  seller             Seller         @relation(fields: [sellerId], references: [id])
+  buyerId            String
+  buyer              Buyer          @relation(fields: [buyerId], references: [id])
+
+  bankId             String?
+  bank               Bank?          @relation(fields: [bankId], references: [id])
+
+  createdBy          String
+  user               User           @relation(fields: [createdBy], references: [id])
+
+  status             InvoiceStatus  @default(DRAFT)
+  paymentStatus      PaymentStatus  @default(UNPAID)
+
+  issueDate          DateTime       @default(now())
+  dueDate            DateTime
+  departureDate      DateTime?
+
+  subtotal           Decimal        @db.Decimal(10,2)
+
+  discountType       DiscountType?
+  discountValue      Decimal?       @db.Decimal(9,2)
+  discountAmount     Decimal?       @db.Decimal(10,2)
+  totalAfterDiscount Decimal        @db.Decimal(10,2)
+
+  currencyFrom       String         @default("USD")
+  exchangeRate       Decimal?       @db.Decimal(10,6)
+  currencyTo         String?
+  grandTotal         Decimal        @db.Decimal(10,2)
+
+  showLogo           Boolean        @default(true)
+  showStamp          Boolean        @default(true)
+
+  description        String?        @db.Text
+  notes              String?        @db.Text
+  termsAndConditions String?        @db.Text
+
+  cancelReason       String?        @db.Text
+  canceledAt         DateTime?
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
+
+  passengers         Passenger[]
+  products           Product[]
+
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([issueDate])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@map("invoices")
+}
+
+// --- PASSENGERS ---
+
+model Passenger {
+  id          String    @id @default(uuid())
+  legacyId    Int?      @unique
+
+  invoiceId   String
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  gender      Gender
+  firstName   String
+  lastName    String
+  birthDate   DateTime?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([invoiceId])
+  @@map("passengers")
+}
+
+// --- PRODUCTS (Line Items) ---
+
+model Product {
+  id            String    @id @default(uuid())
+  legacyId      Int?      @unique
+
+  invoiceId     String
+  invoice       Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  description   String
+  direction     String?
+  departureDate DateTime?
+  arrivalDate   DateTime?
+
+  quantity      Int       @default(1)
+  price         Decimal   @db.Decimal(10,2)
+  total         Decimal   @db.Decimal(10,2)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([invoiceId])
+  @@map("products")
+}
+
+// --- SYSTEM ---
+
+model Settings {
+  id                  String   @id @default(uuid())
+  companyName         String   @default("Company Name")
+  companyLogo         String?
+  defaultCurrency     String   @default("USD")
+  dateFormat          String   @default("MM/DD/YYYY")
+  timezone            String   @default("UTC")
+  itemsPerPage        Int      @default(50)
+  logoDisplayDefault  Boolean  @default(true)
+  stampDisplayDefault Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  resource   String
+  resourceId String?
+  details    String?  @db.Text
+  ipAddress  String?
+  userAgent  String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model LoginHistory {
+  id        String   @id @default(uuid())
+  userId    String?
+  email     String
+  ipAddress String
+  userAgent String   @db.Text
+  status    String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("login_history")
+}

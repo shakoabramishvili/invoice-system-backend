@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #333;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .logo-image {
+      max-width: 100%;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    .invoice-info {
+      text-align: right;
+    }
+
+    .invoice-info h1 {
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+
+    .invoice-info table {
+      margin-left: auto;
+    }
+
+    .invoice-info td {
+      padding: 5px 10px;
+      text-align: left;
+    }
+
+    .invoice-info td:first-child {
+      font-weight: bold;
+      text-align: right;
+      padding-right: 5px;
+    }
+
+    .invoice-info td:nth-child(2) {
+      padding: 5px 2px;
+      text-align: center;
+    }
+
+    .party-headers {
+      display: flex;
+      background-color: #ef4444e6;
+      color: white;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 14px;
+      gap: 40px;
+    }
+
+    .party-header {
+      width: 50%;
+    }
+
+    .party-details {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      gap: 40px;
+    }
+
+    .party {
+      width: 50%;
+    }
+
+    .party table {
+      width: 100%;
+    }
+
+    .party td {
+      padding: 3px 0;
+    }
+
+    .party td:first-child {
+      font-weight: bold;
+      text-align: left;
+      width: 20%;
+      padding-right: 20px;
+    }
+
+    .party td:nth-child(2) {
+      text-align: left;
+      width: 80%;
+    }
+
+    .party-name {
+      font-weight: bold;
+      font-size: 16px;
+      padding-bottom: 8px;
+    }
+
+    .passengers-header {
+      background-color: #ef4444e6;
+      color: white;
+      padding: 10px 20px;
+      margin-top: 20px;
+      margin-bottom: 0;
+      font-weight: bold;
+    }
+
+    .passengers-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    .passengers-table th {
+      border: 1px solid #ef4444e6;
+      background-color: #ef4444e6;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .passengers-table td {
+      border: 1px solid #ef4444e6;
+      padding: 10px;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    .products-table th {
+      border: 1px solid #ef4444e6;
+      background-color: #ef4444e6;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .products-table td {
+      border: 1px solid #ef4444e6;
+      padding: 10px;
+    }
+
+    .products-table td.right {
+      text-align: right;
+    }
+
+    .totals {
+      margin-left: auto;
+      width: 400px;
+      margin-bottom: 30px;
+    }
+
+    .totals-header {
+      background-color: #ef4444e6;
+      color: white;
+      padding: 10px 20px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .totals table {
+      width: 100%;
+    }
+
+    .totals td {
+      padding: 5px 20px;
+      text-align: right;
+    }
+
+    .totals td:first-child {
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .totals tr:last-child td {
+      padding-top: 10px;
+      border-top: 2px solid #ef4444e6;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 40px;
+      gap: 40px;
+    }
+
+    .bank-info {
+      width: 50%;
+    }
+
+    .bank-info-section {
+      margin-bottom: 20px;
+    }
+
+    .bank-info-subtitle {
+      font-weight: bold;
+      font-size: 13px;
+      margin-bottom: 5px;
+      margin-top: 15px;
+    }
+
+    .bank-info table {
+      width: 100%;
+    }
+
+    .bank-info td {
+      padding: 3px 0;
+    }
+
+    .bank-info td:first-child {
+      font-weight: bold;
+      width: 30%;
+      padding-right: 20px;
+      text-align: left;
+    }
+
+    .bank-info td:nth-child(2) {
+      text-align: left;
+      width: 70%;
+    }
+
+    .stamp-container {
+      width: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .stamp {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .stamp-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      {{#if showLogo}}
+      {{#if sellerLogo}}
+      <img src="{{sellerLogo}}" alt="Logo" class="logo-image">
+      {{/if}}
+      {{/if}}
+    </div>
+
+    <div class="invoice-info">
+      <h1>Invoice No: {{invoiceNumber}}</h1>
+      <table>
+        <tr>
+          <td>Issue Date:</td>
+          <td>{{issueDate}}</td>
+        </tr>
+        <tr>
+          <td>Due Date:</td>
+          <td>{{dueDate}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="party-headers">
+    <div class="party-header">Supplier</div>
+    <div class="party-header">Customer</div>
+  </div>
+
+  <div class="party-details">
+    <div class="party">
+      <table>
+        <tr>
+          <td colspan="2" class="party-name">{{seller.name}}</td>
+        </tr>
+        <tr>
+          <td>IDN:</td>
+          <td>{{seller.taxId}}</td>
+        </tr>
+        <tr>
+          <td>Address:</td>
+          <td>{{seller.address}}</td>
+        </tr>
+        <tr>
+          <td>Phone</td>
+          <td>{{seller.phone}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="party">
+      <table>
+        <tr>
+          <td colspan="2" class="party-name">{{buyer.name}}</td>
+        </tr>
+        <tr>
+          <td>IDN:</td>
+          <td>{{buyer.taxId}}</td>
+        </tr>
+        <tr>
+          <td>Address:</td>
+          <td>{{buyer.address}}</td>
+        </tr>
+        <tr>
+          <td>Phone:</td>
+          <td>{{buyer.phone}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  {{#if hasPassengers}}
+  <table class="passengers-table">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Birth Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each passengers}}
+      <tr>
+        <td>{{gender}}</td>
+        <td>{{firstName}}</td>
+        <td>{{lastName}}</td>
+        <td>{{birthDate}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  {{/if}}
+
+  <table class="products-table">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Direction</th>
+        <th>Departure / Arrival</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each products}}
+      <tr>
+        <td>{{description}}</td>
+        <td>{{direction}}</td>
+        <td>{{dates}}</td>
+        <td class="right">{{quantity}}</td>
+        <td class="right">{{price}}</td>
+        <td class="right">{{total}}</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table>
+      <tr>
+        <td>Subtotal:</td>
+        <td>{{subtotal}} {{currencyFrom}}</td>
+      </tr>
+      {{#if hasDiscount}}
+      <tr>
+        <td>{{discountLabel}}</td>
+        <td>-{{discountAmount}} {{currencyFrom}}</td>
+      </tr>
+      {{/if}}
+      <tr>
+        <td>Total Amount:</td>
+        <td>{{totalAfterDiscount}} {{currencyFrom}}</td>
+      </tr>
+      {{#if hasCurrencyConversion}}
+      <tr>
+        <td>Exchange Rate:</td>
+        <td>{{exchangeRate}}</td>
+      </tr>
+      <tr>
+        <td>Grand Total:</td>
+        <td>{{grandTotal}} {{currencyTo}}</td>
+      </tr>
+      {{/if}}
+    </table>
+  </div>
+
+  <div class="footer">
+    <div class="bank-info">
+      <div class="bank-info-section">
+        <table>
+          <tr>
+            <td>Bank Name:</td>
+            <td>{{bank.name}}</td>
+          </tr>
+          <tr>
+            <td>SWIFT:</td>
+            <td>{{bank.swift}}</td>
+          </tr>
+          <tr>
+            <td>Account No:</td>
+            <td>{{bank.accountNumber}}</td>
+          </tr>
+          <tr>
+            <td>Address:</td>
+            <td>{{bank.address}}</td>
+          </tr>
+        </table>
+      </div>
+
+      {{#if bank.intermediaryBankName}}
+      <div class="bank-info-subtitle">Intermediary Bank:</div>
+      <div class="bank-info-section">
+        <table>
+          <tr>
+            <td>Name:</td>
+            <td>{{bank.intermediaryBankName}}</td>
+          </tr>
+          {{#if bank.intermediaryBankSwift}}
+          <tr>
+            <td>SWIFT:</td>
+            <td>{{bank.intermediaryBankSwift}}</td>
+          </tr>
+          {{/if}}
+        </table>
+      </div>
+      {{/if}}
+    </div>
+
+    {{#if showStamp}}
+    <div class="stamp-container">
+      <div class="stamp">
+        {{#if sellerStamp}}
+        <img src="{{sellerStamp}}" alt="Stamp" class="stamp-image">
+        {{/if}}
+      </div>
+    </div>
+    {{/if}}
+  </div>
+
+  {{#if notes}}
+  <div style="margin-top: 30px;">
+    <strong>Notes:</strong>
+    <p>{{notes}}</p>
+  </div>
+  {{/if}}
+
+  {{#if termsAndConditions}}
+  <div style="margin-top: 20px;">
+    <strong>Terms and Conditions:</strong>
+    <p>{{termsAndConditions}}</p>
+  </div>
+  {{/if}}
+</body>
+</html>
