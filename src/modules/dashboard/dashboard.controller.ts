@@ -16,9 +16,3 @@ export class DashboardController {
     return this.dashboardService.getStats();
   }
 }
-
-//test changes
-// test changes
-// test changes 2
-// test changes 3
-// test changes 4
