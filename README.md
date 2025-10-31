@@ -52,12 +52,12 @@ cp .env.example .env
 Edit `.env` and update the database connection string and other settings:
 
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/invoice_platform?schema=public"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_EXPIRES_IN="7d"
-PORT=3000
-NODE_ENV=development
-CORS_ORIGIN="http://localhost:3001"
+DATABASE_URL=
+JWT_SECRET=
+JWT_EXPIRES_IN=
+PORT=
+NODE_ENV=
+CORS_ORIGIN=
 ```
 
 ### 3. Set up the database
