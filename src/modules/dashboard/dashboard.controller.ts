@@ -15,4 +15,16 @@ export class DashboardController {
   getStats() {
     return this.dashboardService.getStats();
   }
+
+  @Get('top-buyers')
+  @ApiOperation({ summary: 'Get top 5 buyers by total revenue' })
+  getTopBuyers() {
+    return this.dashboardService.getTopBuyers();
+  }
+
+  @Get('invoices-per-employee')
+  @ApiOperation({ summary: 'Get number of processed invoices per employee' })
+  getInvoicesPerEmployee() {
+    return this.dashboardService.getInvoicesPerEmployee();
+  }
 }
