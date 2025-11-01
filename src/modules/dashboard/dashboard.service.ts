@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private currencyService: CurrencyService,
+  ) {}
 
   async getStats() {
     // Count all invoices except canceled
@@ -174,6 +178,14 @@ export class DashboardService {
     return {
       success: true,
       data: employeeStats,
+    };
+  }
+
+  async getCurrencyRates() {
+    const rates = await this.currencyService.getCachedRates();
+    return {
+      success: true,
+      data: rates,
     };
   }
 }
