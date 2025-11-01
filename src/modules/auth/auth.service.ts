@@ -221,7 +221,7 @@ export class AuthService {
     const payload = { sub: userId, email };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m',
+      expiresIn: '2h',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
