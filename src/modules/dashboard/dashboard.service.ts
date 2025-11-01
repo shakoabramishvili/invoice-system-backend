@@ -188,4 +188,46 @@ export class DashboardService {
       data: rates,
     };
   }
+
+  async getRecentInvoices() {
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        status: { not: 'CANCELED' },
+      },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        issueDate: true,
+        dueDate: true,
+        departureDate: true,
+        status: true,
+        paymentStatus: true,
+        grandTotal: true,
+        currencyTo: true,
+        createdAt: true,
+        buyer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            prefix: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+    });
+
+    return {
+      success: true,
+      data: invoices,
+    };
+  }
 }

@@ -33,4 +33,10 @@ export class DashboardController {
   getCurrencyRates() {
     return this.dashboardService.getCurrencyRates();
   }
+
+  @Get('recent-invoices')
+  @ApiOperation({ summary: 'Get last 10 recent invoices (excluding canceled)' })
+  getRecentInvoices() {
+    return this.dashboardService.getRecentInvoices();
+  }
 }
