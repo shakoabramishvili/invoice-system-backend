@@ -27,4 +27,10 @@ export class DashboardController {
   getInvoicesPerEmployee() {
     return this.dashboardService.getInvoicesPerEmployee();
   }
+
+  @Get('currency-rates')
+  @ApiOperation({ summary: 'Get cached currency exchange rates from all banks' })
+  getCurrencyRates() {
+    return this.dashboardService.getCurrencyRates();
+  }
 }
