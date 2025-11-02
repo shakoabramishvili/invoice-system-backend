@@ -8,11 +8,14 @@ import { UpdateInvoiceDto } from './dto/update-invoice.dto';
 import { UpdateInvoiceStatusDto, UpdatePaymentStatusDto } from './dto/update-invoice-status.dto';
 import { CancelInvoiceDto } from './dto/cancel-invoice.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('invoices')
 @Controller('invoices')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class InvoicesController {
   constructor(
@@ -21,12 +24,14 @@ export class InvoicesController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new invoice' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Create a new invoice (Admin & Operator only)' })
   create(@Body() createInvoiceDto: CreateInvoiceDto, @CurrentUser() user: any) {
     return this.invoicesService.create(createInvoiceDto, user.id);
   }
 
   @Get()
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get all invoices' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -70,6 +75,7 @@ export class InvoicesController {
   }
 
   @Get('export')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Export invoices to Excel' })
   @ApiQuery({ name: 'status', required: false, type: String })
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
@@ -112,6 +118,7 @@ export class InvoicesController {
   }
 
   @Get('canceled/export')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Export canceled invoices to Excel' })
   @ApiQuery({ name: 'paymentStatus', required: false, type: String })
   @ApiQuery({ name: 'sellerId', required: false, type: String })
@@ -151,6 +158,7 @@ export class InvoicesController {
   }
 
   @Get('canceled')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get canceled invoices' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -180,6 +188,7 @@ export class InvoicesController {
   }
 
   @Get(':id/pdf')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Generate invoice PDF' })
   @ApiQuery({ name: 'template', required: false, type: String, description: 'Template name (default: default-invoice)' })
   async downloadPdf(
@@ -198,12 +207,14 @@ export class InvoicesController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get invoice by ID' })
   findOne(@Param('id') id: string) {
     return this.invoicesService.findOne(id);
   }
 
   @Patch(':id')
+  @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Update invoice' })
   update(
     @Param('id') id: string,
@@ -214,6 +225,7 @@ export class InvoicesController {
   }
 
   @Patch(':id/status')
+  @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Update invoice status' })
   updateStatus(
     @Param('id') id: string,
@@ -224,6 +236,7 @@ export class InvoicesController {
   }
 
   @Patch(':id/payment-status')
+  @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Update payment status' })
   updatePaymentStatus(
     @Param('id') id: string,
@@ -234,6 +247,7 @@ export class InvoicesController {
   }
 
   @Post(':id/cancel')
+  @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Cancel invoice' })
   cancel(
     @Param('id') id: string,
@@ -244,6 +258,7 @@ export class InvoicesController {
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete invoice (soft delete)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.invoicesService.remove(id, user.id);

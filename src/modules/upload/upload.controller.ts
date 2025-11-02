@@ -13,17 +13,21 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { DeleteFileDto } from './dto/delete-file.dto';
 
 @ApiTags('Upload')
 @ApiBearerAuth()
 @Controller('upload')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post('single')
-  @ApiOperation({ summary: 'Upload a single file' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload a single file (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -64,7 +68,8 @@ export class UploadController {
   }
 
   @Post('multiple')
-  @ApiOperation({ summary: 'Upload multiple files' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload multiple files (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -108,7 +113,8 @@ export class UploadController {
   }
 
   @Post('image')
-  @ApiOperation({ summary: 'Upload an image file (JPEG, PNG, GIF, WebP)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload an image file (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -148,7 +154,8 @@ export class UploadController {
   }
 
   @Post('document')
-  @ApiOperation({ summary: 'Upload a document (PDF, DOC, DOCX, XLS, XLSX)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload a document (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -188,7 +195,8 @@ export class UploadController {
   }
 
   @Delete('file')
-  @ApiOperation({ summary: 'Delete a file by key' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete a file by key (Admin & Operator only)' })
   async deleteFile(@Body() deleteFileDto: DeleteFileDto) {
     await this.uploadService.deleteFile(deleteFileDto.key);
 
@@ -199,7 +207,8 @@ export class UploadController {
   }
 
   @Delete('files')
-  @ApiOperation({ summary: 'Delete multiple files by keys' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete multiple files by keys (Admin & Operator only)' })
   @ApiBody({
     schema: {
       type: 'object',

@@ -4,22 +4,27 @@ import { BuyersService } from './buyers.service';
 import { CreateBuyerDto } from './dto/create-buyer.dto';
 import { UpdateBuyerDto } from './dto/update-buyer.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('buyers')
 @Controller('buyers')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class BuyersController {
   constructor(private readonly buyersService: BuyersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new buyer' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Create a new buyer (Admin & Operator only)' })
   create(@Body() createBuyerDto: CreateBuyerDto, @CurrentUser() user: any) {
     return this.buyersService.create(createBuyerDto, user.id);
   }
 
   @Get()
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get all buyers' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -40,13 +45,15 @@ export class BuyersController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get buyer by ID' })
   findOne(@Param('id') id: string) {
     return this.buyersService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update buyer' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Update buyer (Admin & Operator only)' })
   update(
     @Param('id') id: string,
     @Body() updateBuyerDto: UpdateBuyerDto,
@@ -56,7 +63,8 @@ export class BuyersController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete buyer (soft delete)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete buyer (Admin & Operator only)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.buyersService.remove(id, user.id);
   }

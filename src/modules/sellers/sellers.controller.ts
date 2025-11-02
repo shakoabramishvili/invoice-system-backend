@@ -18,8 +18,8 @@ export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Create a new seller (Admin only)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Create a new seller (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -36,7 +36,7 @@ export class SellersController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR)
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get all sellers' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -57,15 +57,15 @@ export class SellersController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR)
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
   @ApiOperation({ summary: 'Get seller by ID' })
   findOne(@Param('id') id: string) {
     return this.sellersService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Update seller (Admin only)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Update seller (Admin & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor([
@@ -83,8 +83,8 @@ export class SellersController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Delete seller (Admin only)' })
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete seller (Admin & Operator only)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.sellersService.remove(id, user.id);
   }
