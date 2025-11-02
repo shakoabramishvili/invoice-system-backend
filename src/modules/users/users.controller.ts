@@ -26,8 +26,8 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get all users (Admin only)' })
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @ApiOperation({ summary: 'Get all users' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'role', required: false, enum: Role })
@@ -50,8 +50,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get user by ID (Admin only)' })
+  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @ApiOperation({ summary: 'Get user by ID' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
