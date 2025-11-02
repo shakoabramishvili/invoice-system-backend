@@ -38,67 +38,77 @@ export class InvoicesService {
       throw new BadRequestException('Seller does not have a default bank account');
     }
 
-    // Generate invoice number
-    const invoiceNumber = await this.generateInvoiceNumber(seller.prefix, buyer.prefix);
-
     // Calculate dueDate as issueDate + 1 month
     const issueDate = new Date(createInvoiceDto.issueDate);
     const dueDate = new Date(issueDate);
     dueDate.setMonth(dueDate.getMonth() + 1);
 
-    // Create invoice with passengers and products
-    const invoice = await this.prisma.invoice.create({
-      data: {
-        invoiceNumber,
-        sellerId: createInvoiceDto.sellerId,
-        buyerId: createInvoiceDto.buyerId,
-        bankId: defaultBank.id,
-        createdBy: currentUserId,
-        issueDate: issueDate,
-        dueDate: dueDate,
-        departureDate: createInvoiceDto.departureDate ? new Date(createInvoiceDto.departureDate) : null,
-        subtotal: createInvoiceDto.subtotal,
-        discountType: createInvoiceDto.discountType,
-        discountValue: createInvoiceDto.discountValue,
-        discountAmount: createInvoiceDto.discountAmount,
-        totalAfterDiscount: createInvoiceDto.totalAfterDiscount,
-        currencyFrom: createInvoiceDto.currencyFrom,
-        exchangeRate: createInvoiceDto.exchangeRate,
-        currencyTo: createInvoiceDto.currencyTo,
-        grandTotal: createInvoiceDto.grandTotal,
-        showLogo: createInvoiceDto.showLogo,
-        showStamp: createInvoiceDto.showStamp,
-        description: createInvoiceDto.description,
-        notes: createInvoiceDto.notes,
-        termsAndConditions: createInvoiceDto.termsAndConditions,
-        passengers: {
-          create: createInvoiceDto.passengers.map((p) => ({
-            gender: p.gender,
-            firstName: p.firstName,
-            lastName: p.lastName,
-            birthDate: p.birthDate ? new Date(p.birthDate) : null,
-          })),
+    // Use transaction to prevent race conditions in invoice number generation
+    const invoice = await this.prisma.$transaction(async (prisma) => {
+      // Generate invoice number within transaction
+      const invoiceNumberData = await this.generateInvoiceNumberInTransaction(
+        prisma,
+        seller.prefix,
+        buyer.prefix,
+      );
+
+      // Create invoice with passengers and products
+      return await prisma.invoice.create({
+        data: {
+          invoiceNumber: invoiceNumberData.invoiceNumber,
+          prefix: invoiceNumberData.prefix,
+          year: invoiceNumberData.year,
+          serial: invoiceNumberData.serial,
+          sellerId: createInvoiceDto.sellerId,
+          buyerId: createInvoiceDto.buyerId,
+          bankId: defaultBank.id,
+          createdBy: currentUserId,
+          issueDate: issueDate,
+          dueDate: dueDate,
+          departureDate: createInvoiceDto.departureDate ? new Date(createInvoiceDto.departureDate) : null,
+          subtotal: createInvoiceDto.subtotal,
+          discountType: createInvoiceDto.discountType,
+          discountValue: createInvoiceDto.discountValue,
+          discountAmount: createInvoiceDto.discountAmount,
+          totalAfterDiscount: createInvoiceDto.totalAfterDiscount,
+          currencyFrom: createInvoiceDto.currencyFrom,
+          exchangeRate: createInvoiceDto.exchangeRate,
+          currencyTo: createInvoiceDto.currencyTo,
+          grandTotal: createInvoiceDto.grandTotal,
+          showLogo: createInvoiceDto.showLogo,
+          showStamp: createInvoiceDto.showStamp,
+          description: createInvoiceDto.description,
+          notes: createInvoiceDto.notes,
+          termsAndConditions: createInvoiceDto.termsAndConditions,
+          passengers: {
+            create: createInvoiceDto.passengers.map((p) => ({
+              gender: p.gender,
+              firstName: p.firstName,
+              lastName: p.lastName,
+              birthDate: p.birthDate ? new Date(p.birthDate) : null,
+            })),
+          },
+          products: {
+            create: createInvoiceDto.products.map((p) => ({
+              description: p.description,
+              direction: p.direction,
+              departureDate: p.departureDate ? new Date(p.departureDate) : null,
+              arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
+              quantity: p.quantity,
+              price: p.price,
+              total: p.total,
+            })),
+          },
         },
-        products: {
-          create: createInvoiceDto.products.map((p) => ({
-            description: p.description,
-            direction: p.direction,
-            departureDate: p.departureDate ? new Date(p.departureDate) : null,
-            arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
-            quantity: p.quantity,
-            price: p.price,
-            total: p.total,
-          })),
+        include: {
+          seller: true,
+          buyer: true,
+          bank: true,
+          user: { select: { id: true, fullName: true, email: true } },
+          passengers: true,
+          products: true,
         },
-      },
-      include: {
-        seller: true,
-        buyer: true,
-        bank: true,
-        user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
-        products: true,
-      },
+      });
     });
 
     await this.prisma.activityLog.create({
@@ -683,6 +693,7 @@ export class InvoicesService {
   private buildOrderBy(sortBy?: string, sortOrder?: string): any {
     // Allowed sort fields mapping
     const allowedSortFields = {
+      'serial': { serial: sortOrder || 'desc' },
       'invoiceNumber': { invoiceNumber: sortOrder || 'desc' },
       'issueDate': { issueDate: sortOrder || 'desc' },
       'dueDate': { dueDate: sortOrder || 'desc' },
@@ -702,34 +713,49 @@ export class InvoicesService {
       return allowedSortFields[sortBy];
     }
 
-    // Default sorting by issueDate descending
-    return { issueDate: 'desc' };
+    // Default sorting by serial descending (most recent invoices first)
+    return { serial: 'desc' };
   }
 
-  private async generateInvoiceNumber(sellerPrefix: string, buyerPrefix?: string): Promise<string> {
-    // Combine seller and buyer prefixes
-    const prefix = `${sellerPrefix}${buyerPrefix || ''}`;
+  private async generateInvoiceNumberInTransaction(
+    prisma: any,
+    sellerPrefix: string,
+    buyerPrefix?: string,
+  ): Promise<{
+    invoiceNumber: string;
+    prefix: string;
+    year: string;
+    serial: number;
+  }> {
+    // Generate prefix: INV-{SellerPrefix}{BuyerPrefix?}
+    const prefix = `INV-${sellerPrefix}${buyerPrefix || ''}`;
 
-    // Find the last invoice for this seller
-    const lastInvoice = await this.prisma.invoice.findFirst({
+    // Get current year (last 2 digits)
+    const currentYear = new Date().getFullYear();
+    const year = currentYear.toString().slice(-2);
+
+    // Find the last invoice for this year (within transaction)
+    const lastInvoice = await prisma.invoice.findFirst({
       where: {
-        invoiceNumber: {
-          startsWith: prefix,
-        },
+        year: year,
       },
-      orderBy: { invoiceNumber: 'desc' },
+      orderBy: { serial: 'desc' },
     });
 
-    let number = 1;
-    if (lastInvoice) {
-      // Extract the number from the invoice number
-      const lastNumber = lastInvoice.invoiceNumber.replace(prefix, '');
-      number = parseInt(lastNumber) + 1;
-    }
+    // Increment serial or start at 1
+    const serial = lastInvoice?.serial ? lastInvoice.serial + 1 : 1;
 
-    // Pad to 4 digits
-    const paddedNumber = number.toString().padStart(4, '0');
+    // Pad serial to 4 digits
+    const paddedSerial = serial.toString().padStart(4, '0');
 
-    return `${prefix}${paddedNumber}`;
+    // Generate full invoice number: INV-{SellerPrefix}{BuyerPrefix?}-{Year}/{Serial}
+    const invoiceNumber = `${prefix}-${year}/${paddedSerial}`;
+
+    return {
+      invoiceNumber,
+      prefix,
+      year,
+      serial,
+    };
   }
 }

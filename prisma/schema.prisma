@@ -185,7 +185,10 @@ model Invoice {
   id                 String         @id @default(uuid())
   legacyId           Int?           @unique
 
-  invoiceNumber      String         @unique // "IAGFF0648"
+  prefix             String?        // "INV-IAGFF" or "INV-IAGFFGFF"
+  year               String?        // "25"
+  serial             Int?           // 1
+  invoiceNumber      String         @unique // "INV-IAGFF-25/0001"
 
   sellerId           String
   seller             Seller         @relation(fields: [sellerId], references: [id])
@@ -234,6 +237,7 @@ model Invoice {
   passengers         Passenger[]
   products           Product[]
 
+  @@unique([year, serial])
   @@index([invoiceNumber])
   @@index([status])
   @@index([issueDate])

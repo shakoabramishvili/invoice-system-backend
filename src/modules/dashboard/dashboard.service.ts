@@ -196,6 +196,9 @@ export class DashboardService {
       },
       select: {
         id: true,
+        prefix: true,
+        year: true,
+        serial: true,
         invoiceNumber: true,
         issueDate: true,
         dueDate: true,
