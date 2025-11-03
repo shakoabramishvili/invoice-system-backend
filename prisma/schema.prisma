@@ -192,8 +192,8 @@ model Invoice {
 
   sellerId           String
   seller             Seller         @relation(fields: [sellerId], references: [id])
-  buyerId            String
-  buyer              Buyer          @relation(fields: [buyerId], references: [id])
+  buyerId            String?
+  buyer              Buyer?         @relation(fields: [buyerId], references: [id])
 
   bankId             String?
   bank               Bank?          @relation(fields: [bankId], references: [id])
@@ -203,6 +203,7 @@ model Invoice {
 
   status             InvoiceStatus  @default(DRAFT)
   paymentStatus      PaymentStatus  @default(UNPAID)
+  legalType          LegalType      @default(LEGAL_ENTITY)
 
   issueDate          DateTime       @default(now())
   dueDate            DateTime
@@ -259,6 +260,7 @@ model Passenger {
   firstName   String
   lastName    String
   birthDate   DateTime?
+  isMain      Boolean   @default(false)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
