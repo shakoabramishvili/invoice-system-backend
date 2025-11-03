@@ -110,7 +110,30 @@ export class PdfService {
       firstName: p.firstName,
       lastName: p.lastName,
       birthDate: p.birthDate ? formatDate(new Date(p.birthDate)) : '',
+      isMain: p.isMain,
     }));
+
+    // Handle buyer logic for individuals without a registered buyer
+    let buyer = invoice.buyer;
+    let isBuyerFromPassenger = false;
+    if (invoice.legalType === 'INDIVIDUAL' && !invoice.buyerId && passengers.length > 0) {
+      // Find the main passenger
+      const mainPassenger = passengers.find(p => p.isMain);
+      if (mainPassenger) {
+        // Create a buyer object from the main passenger
+        buyer = {
+          name: `${mainPassenger.firstName} ${mainPassenger.lastName}`,
+          // Other fields will be null/empty as they don't apply to individual passengers
+          taxId: null,
+          contactPerson: null,
+          email: null,
+          phone: null,
+          address: null,
+          country: null,
+        };
+        isBuyerFromPassenger = true;
+      }
+    }
 
     // Format products
     const products = (invoice.products || []).map(p => {
@@ -135,7 +158,8 @@ export class PdfService {
       sellerLogo: invoice.seller?.logo || null,
       sellerStamp: invoice.seller?.stamp || null,
       seller: invoice.seller,
-      buyer: invoice.buyer,
+      buyer: buyer,
+      isBuyerFromPassenger: isBuyerFromPassenger,
       hasPassengers: passengers.length > 0,
       passengers,
       products,

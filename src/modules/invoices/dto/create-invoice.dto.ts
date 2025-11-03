@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsUUID, IsEnum, IsNumber, IsBoolean, IsOptional, IsDateString, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DiscountType } from '@prisma/client';
+import { DiscountType, LegalType } from '@prisma/client';
 import { CreatePassengerDto } from './create-passenger.dto';
 import { CreateProductDto } from './create-product.dto';
 
@@ -10,9 +10,14 @@ export class CreateInvoiceDto {
   @IsUUID()
   sellerId: string;
 
-  @ApiProperty({ example: 'uuid-of-buyer' })
+  @ApiProperty({ example: 'uuid-of-buyer', required: false })
+  @IsOptional()
   @IsUUID()
-  buyerId: string;
+  buyerId?: string;
+
+  @ApiProperty({ enum: LegalType, default: LegalType.LEGAL_ENTITY })
+  @IsEnum(LegalType)
+  legalType: LegalType;
 
   @ApiProperty({ example: '2024-12-01', description: 'Invoice issue date' })
   @IsDateString()

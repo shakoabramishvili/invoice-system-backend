@@ -12,17 +12,25 @@ export class InvoicesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createInvoiceDto: CreateInvoiceDto, currentUserId: string) {
-    // Verify seller and buyer exist and are not deleted
-    const [seller, buyer] = await Promise.all([
-      this.prisma.seller.findUnique({ where: { id: createInvoiceDto.sellerId } }),
-      this.prisma.buyer.findUnique({ where: { id: createInvoiceDto.buyerId } }),
-    ]);
+    // Verify seller exists and is not deleted
+    const seller = await this.prisma.seller.findUnique({
+      where: { id: createInvoiceDto.sellerId }
+    });
 
     if (!seller || seller.deletedAt) {
       throw new NotFoundException('Seller not found');
     }
-    if (!buyer || buyer.deletedAt) {
-      throw new NotFoundException('Buyer not found');
+
+    // Verify buyer exists if provided
+    let buyer = null;
+    if (createInvoiceDto.buyerId) {
+      buyer = await this.prisma.buyer.findUnique({
+        where: { id: createInvoiceDto.buyerId }
+      });
+
+      if (!buyer || buyer.deletedAt) {
+        throw new NotFoundException('Buyer not found');
+      }
     }
 
     // Get the seller's default bank
@@ -49,7 +57,7 @@ export class InvoicesService {
       const invoiceNumberData = await this.generateInvoiceNumberInTransaction(
         prisma,
         seller.prefix,
-        buyer.prefix,
+        buyer?.prefix,
       );
 
       // Create invoice with passengers and products
@@ -61,6 +69,7 @@ export class InvoicesService {
           serial: invoiceNumberData.serial,
           sellerId: createInvoiceDto.sellerId,
           buyerId: createInvoiceDto.buyerId,
+          legalType: createInvoiceDto.legalType,
           bankId: defaultBank.id,
           createdBy: currentUserId,
           issueDate: issueDate,
@@ -81,11 +90,12 @@ export class InvoicesService {
           notes: createInvoiceDto.notes,
           termsAndConditions: createInvoiceDto.termsAndConditions,
           passengers: {
-            create: createInvoiceDto.passengers.map((p) => ({
+            create: createInvoiceDto.passengers.map((p, index) => ({
               gender: p.gender,
               firstName: p.firstName,
               lastName: p.lastName,
               birthDate: p.birthDate ? new Date(p.birthDate) : null,
+              isMain: index === 0, // First passenger is main
             })),
           },
           products: {
@@ -265,7 +275,8 @@ export class InvoicesService {
       where: { id },
       data: {
         ...(updateInvoiceDto.sellerId && { sellerId: updateInvoiceDto.sellerId, bankId }),
-        ...(updateInvoiceDto.buyerId && { buyerId: updateInvoiceDto.buyerId }),
+        ...(updateInvoiceDto.buyerId !== undefined && { buyerId: updateInvoiceDto.buyerId }),
+        ...(updateInvoiceDto.legalType && { legalType: updateInvoiceDto.legalType }),
         ...(updateInvoiceDto.issueDate && { issueDate: new Date(updateInvoiceDto.issueDate), dueDate }),
         ...(updateInvoiceDto.departureDate && { departureDate: new Date(updateInvoiceDto.departureDate) }),
         ...(updateInvoiceDto.subtotal !== undefined && { subtotal: updateInvoiceDto.subtotal }),
@@ -284,11 +295,12 @@ export class InvoicesService {
         ...(updateInvoiceDto.termsAndConditions !== undefined && { termsAndConditions: updateInvoiceDto.termsAndConditions }),
         ...(updateInvoiceDto.passengers && {
           passengers: {
-            create: updateInvoiceDto.passengers.map((p) => ({
+            create: updateInvoiceDto.passengers.map((p, index) => ({
               gender: p.gender,
               firstName: p.firstName,
               lastName: p.lastName,
               birthDate: p.birthDate ? new Date(p.birthDate) : null,
+              isMain: index === 0, // First passenger is main
             })),
           },
         }),
@@ -620,13 +632,22 @@ export class InvoicesService {
         .filter(d => d)
         .join('; ');
 
+      // Handle customer name logic for individuals without a registered buyer
+      let customerName = invoice.buyer?.name || '';
+      if (invoice.legalType === 'INDIVIDUAL' && !invoice.buyerId && invoice.passengers.length > 0) {
+        const mainPassenger = invoice.passengers.find(p => p.isMain);
+        if (mainPassenger) {
+          customerName = `${mainPassenger.firstName} ${mainPassenger.lastName}`;
+        }
+      }
+
       const row = worksheet.addRow({
         invoiceNumber: invoice.invoiceNumber,
         issueDate: formatDate(invoice.issueDate),
         dueDate: formatDate(invoice.dueDate),
         departureDate: formatDate(invoice.departureDate),
         supplierName: invoice.seller?.name || '',
-        customerName: invoice.buyer?.name || '',
+        customerName: customerName,
         passengers,
         productDescription: productDescriptions,
         productDirection: productDirections,

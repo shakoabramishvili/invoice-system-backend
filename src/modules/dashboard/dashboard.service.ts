@@ -66,6 +66,7 @@ export class DashboardService {
     const invoices = await this.prisma.invoice.findMany({
       where: {
         status: { not: 'CANCELED' },
+        buyerId: { not: null }, // Only get invoices with buyers
       },
       select: {
         buyerId: true,
@@ -92,6 +93,11 @@ export class DashboardService {
     >();
 
     for (const invoice of invoices) {
+      // Skip if buyer is null (shouldn't happen due to where clause, but defensive)
+      if (!invoice.buyerId || !invoice.buyer) {
+        continue;
+      }
+
       const buyerId = invoice.buyerId;
       const currency = invoice.currencyTo || 'USD';
       const grandTotal = Number(invoice.grandTotal);
@@ -205,6 +211,7 @@ export class DashboardService {
         departureDate: true,
         status: true,
         paymentStatus: true,
+        legalType: true,
         grandTotal: true,
         currencyTo: true,
         createdAt: true,
@@ -219,6 +226,16 @@ export class DashboardService {
             id: true,
             name: true,
             prefix: true,
+          },
+        },
+        passengers: {
+          select: {
+            id: true,
+            gender: true,
+            firstName: true,
+            lastName: true,
+            birthDate: true,
+            isMain: true,
           },
         },
       },
