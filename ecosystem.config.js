@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'invoice-platform-backend',
+      name: 'backend',
       script: 'dist/main.js',
       instances: 1,
       exec_mode: 'fork',
