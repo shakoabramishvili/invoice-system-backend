@@ -94,7 +94,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 token refreshes per minute
+  @Throttle({ default: { limit: 50, ttl: 60000 } }) // 50 token refreshes per minute
   @ApiOperation({ summary: 'Refresh access token' })
   async refresh(
     @Req() req: Request,
