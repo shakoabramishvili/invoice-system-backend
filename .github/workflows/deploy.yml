@@ -14,18 +14,16 @@ jobs:
         run: |
           cd /var/www/invoice-system-backend
 
-          echo "Discarding local changes to lock files..."
-          git checkout -- package-lock.json yarn.lock 2>/dev/null || true
-
           echo "Pulling latest code from main..."
           git pull origin main
 
-          echo "Cleaning build cache..."
-          rm -rf dist/
-          rm -rf node_modules/
-          rm -rf .tsbuildinfo
-          rm -rf node_modules/.cache/
-          rm -rf ~/.npm/_cacache/
+          echo "Stopping PM2 backend..."
+          sudo pm2 stop backend
+
+          echo "Cleaning build directories..."
+          sudo rm -rf dist
+          sudo rm -rf dist.old
+          rm -rf node_modules/.cache
 
           echo "Installing dependencies..."
           npm install
@@ -42,19 +40,10 @@ jobs:
           echo "Ensuring logs directory exists..."
           mkdir -p logs
 
-          echo "Stopping and deleting PM2 backend process..."
-          sudo pm2 delete backend || true
-
-          echo "Starting backend with PM2..."
-          pm2 start ecosystem.config.js --update-env
-
-          echo "Saving PM2 configuration..."
-          pm2 save
+          echo "Starting PM2..."
+          sudo pm2 start ecosystem.config.js
 
           echo "Checking PM2 status..."
-          pm2 status
-
-          echo "Showing recent PM2 logs..."
-          pm2 logs --lines 50 --nostream
+          sudo pm2 status
 
           echo "Deployment completed successfully."
