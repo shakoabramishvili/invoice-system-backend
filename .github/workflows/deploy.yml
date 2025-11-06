@@ -26,6 +26,9 @@ jobs:
           echo "Generating Prisma Client..."
           npx prisma generate
 
+          echo "Cleaning old build..."
+          rm -rf dist
+
           echo "Building application..."
           npm run build
 
