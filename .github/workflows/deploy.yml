@@ -34,8 +34,8 @@ jobs:
           echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Building app with adequate memory..."
-          NODE_OPTIONS="--max-old-space-size=2048" npm run build
+          echo "Building application..."
+          npm run build
 
           echo "Ensuring logs directory exists..."
           mkdir -p logs
