@@ -42,8 +42,15 @@ jobs:
           echo "Ensuring logs directory exists..."
           mkdir -p logs
 
-          echo "Restarting with PM2..."
-          pm2 startOrReload ecosystem.config.js --update-env
+          echo "Stopping PM2 backend process..."
+          pm2 stop backend || true
+          pm2 delete backend || true
+
+          echo "Starting backend with PM2..."
+          pm2 start ecosystem.config.js --update-env
+
+          echo "Saving PM2 configuration..."
+          pm2 save
 
           echo "Checking PM2 status..."
           pm2 status
