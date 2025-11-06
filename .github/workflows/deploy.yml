@@ -22,7 +22,23 @@ jobs:
 
           echo "Running Prisma migrations..."
           npx prisma generate
-          npx prisma migrate deploy
+
+          # Try to deploy migrations, if it fails due to non-empty DB, baseline it
+          if ! npx prisma migrate deploy 2>&1 | tee /tmp/migrate-output.log; then
+            if grep -q "P3005" /tmp/migrate-output.log; then
+              echo "Database needs to be baselined. Marking all migrations as applied..."
+              for migration in prisma/migrations/*/; do
+                migration_name=$(basename "$migration")
+                echo "Marking migration as applied: $migration_name"
+                npx prisma migrate resolve --applied "$migration_name" || true
+              done
+              echo "Attempting deployment again..."
+              npx prisma migrate deploy
+            else
+              echo "Migration failed with a different error"
+              exit 1
+            fi
+          fi
 
           echo "Building application..."
           npm run build
