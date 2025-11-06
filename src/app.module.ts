@@ -36,7 +36,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
-        limit: 10, // 10 requests per minute globally
+        limit: 100, // 100 requests per minute globally
       },
     ]),
     PrismaModule,
