@@ -20,17 +20,24 @@ jobs:
           echo "Pulling latest code from main..."
           git pull origin main
 
+          echo "Cleaning build cache..."
+          rm -rf dist/
+          rm -rf node_modules/
+          rm -rf .tsbuildinfo
+          rm -rf node_modules/.cache/
+          rm -rf ~/.npm/_cacache/
+
           echo "Installing dependencies..."
           npm install
 
-          echo "Generating Prisma Client..."
+          echo "Pulling DB schema..."
+          npx prisma db pull
+
+          echo "Generating Prisma client..."
           npx prisma generate
 
-          echo "Cleaning old build..."
-          rm -rf dist
-
-          echo "Building application..."
-          npm run build
+          echo "Building app with adequate memory..."
+          NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
           echo "Ensuring logs directory exists..."
           mkdir -p logs
