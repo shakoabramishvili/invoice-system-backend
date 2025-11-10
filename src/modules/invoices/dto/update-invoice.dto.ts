@@ -16,6 +16,11 @@ export class UpdateInvoiceDto {
   @IsUUID()
   buyerId?: string;
 
+  @ApiProperty({ example: 'uuid-of-bank', required: false, description: 'Bank account ID' })
+  @IsOptional()
+  @IsUUID()
+  bankId?: string;
+
   @ApiProperty({ enum: LegalType, required: false })
   @IsOptional()
   @IsEnum(LegalType)

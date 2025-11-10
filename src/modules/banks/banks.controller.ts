@@ -17,14 +17,14 @@ export class BanksController {
   constructor(private readonly banksService: BanksService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Create a new bank account (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Create a new bank account (Admin, Manager & Operator only)' })
   create(@Body() createBankDto: CreateBankDto, @CurrentUser() user: any) {
     return this.banksService.create(createBankDto, user.id);
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get all banks' })
   findAll(
     @Query('page') page?: string,
@@ -37,22 +37,22 @@ export class BanksController {
   }
 
   @Get('seller/:sellerId')
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get banks by seller ID' })
   findBySeller(@Param('sellerId') sellerId: string) {
     return this.banksService.findBySeller(sellerId);
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get bank by ID' })
   findOne(@Param('id') id: string) {
     return this.banksService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Update bank (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Update bank (Admin, Manager & Operator only)' })
   update(
     @Param('id') id: string,
     @Body() updateBankDto: UpdateBankDto,
@@ -62,15 +62,15 @@ export class BanksController {
   }
 
   @Patch(':id/default')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Set bank as default (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Set bank as default (Admin, Manager & Operator only)' })
   setDefault(@Param('id') id: string, @CurrentUser() user: any) {
     return this.banksService.setDefault(id, user.id);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Delete bank (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete bank (Admin, Manager & Operator only)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.banksService.remove(id, user.id);
   }

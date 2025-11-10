@@ -15,7 +15,7 @@ export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get settings' })
   getSettings() {
     return this.settingsService.getSettings();

@@ -15,6 +15,11 @@ export class CreateInvoiceDto {
   @IsUUID()
   buyerId?: string;
 
+  @ApiProperty({ example: 'uuid-of-bank', required: false, description: 'Bank account ID (if not provided, seller default bank will be used)' })
+  @IsOptional()
+  @IsUUID()
+  bankId?: string;
+
   @ApiProperty({ enum: LegalType, default: LegalType.LEGAL_ENTITY })
   @IsEnum(LegalType)
   legalType: LegalType;
