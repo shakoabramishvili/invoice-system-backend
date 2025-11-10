@@ -17,14 +17,14 @@ export class BuyersController {
   constructor(private readonly buyersService: BuyersService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Create a new buyer (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Create a new buyer (Admin, Manager & Operator only)' })
   create(@Body() createBuyerDto: CreateBuyerDto, @CurrentUser() user: any) {
     return this.buyersService.create(createBuyerDto, user.id);
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get all buyers' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -45,15 +45,15 @@ export class BuyersController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get buyer by ID' })
   findOne(@Param('id') id: string) {
     return this.buyersService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Update buyer (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Update buyer (Admin, Manager & Operator only)' })
   update(
     @Param('id') id: string,
     @Body() updateBuyerDto: UpdateBuyerDto,
@@ -63,8 +63,8 @@ export class BuyersController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Delete buyer (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete buyer (Admin, Manager & Operator only)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.buyersService.remove(id, user.id);
   }

@@ -33,17 +33,38 @@ export class InvoicesService {
       }
     }
 
-    // Get the seller's default bank
-    const defaultBank = await this.prisma.bank.findFirst({
-      where: {
-        sellerId: createInvoiceDto.sellerId,
-        isDefault: true,
-        deletedAt: null,
-      },
-    });
+    // Determine which bank to use
+    let bankId: string;
+    if (createInvoiceDto.bankId) {
+      // Verify the provided bank exists and belongs to the seller
+      const bank = await this.prisma.bank.findUnique({
+        where: { id: createInvoiceDto.bankId }
+      });
 
-    if (!defaultBank) {
-      throw new BadRequestException('Seller does not have a default bank account');
+      if (!bank || bank.deletedAt) {
+        throw new NotFoundException('Bank not found');
+      }
+
+      if (bank.sellerId !== createInvoiceDto.sellerId) {
+        throw new BadRequestException('Bank does not belong to the selected seller');
+      }
+
+      bankId = createInvoiceDto.bankId;
+    } else {
+      // Get the seller's default bank
+      const defaultBank = await this.prisma.bank.findFirst({
+        where: {
+          sellerId: createInvoiceDto.sellerId,
+          isDefault: true,
+          deletedAt: null,
+        },
+      });
+
+      if (!defaultBank) {
+        throw new BadRequestException('Seller does not have a default bank account');
+      }
+
+      bankId = defaultBank.id;
     }
 
     // Calculate dueDate as issueDate + 1 month
@@ -70,7 +91,7 @@ export class InvoicesService {
           sellerId: createInvoiceDto.sellerId,
           buyerId: createInvoiceDto.buyerId,
           legalType: createInvoiceDto.legalType,
-          bankId: defaultBank.id,
+          bankId: bankId,
           createdBy: currentUserId,
           issueDate: issueDate,
           dueDate: dueDate,
@@ -237,9 +258,29 @@ export class InvoicesService {
       throw new NotFoundException('Invoice not found');
     }
 
-    // If seller is being changed, get the new seller's default bank
+    // Determine which bank to use
     let bankId = invoice.bankId;
-    if (updateInvoiceDto.sellerId && updateInvoiceDto.sellerId !== invoice.sellerId) {
+
+    // If bankId is explicitly provided, validate and use it
+    if (updateInvoiceDto.bankId) {
+      const bank = await this.prisma.bank.findUnique({
+        where: { id: updateInvoiceDto.bankId }
+      });
+
+      if (!bank || bank.deletedAt) {
+        throw new NotFoundException('Bank not found');
+      }
+
+      // Check if bank belongs to the current or new seller
+      const targetSellerId = updateInvoiceDto.sellerId || invoice.sellerId;
+      if (bank.sellerId !== targetSellerId) {
+        throw new BadRequestException('Bank does not belong to the selected seller');
+      }
+
+      bankId = updateInvoiceDto.bankId;
+    }
+    // If seller is being changed but no bankId provided, get the new seller's default bank
+    else if (updateInvoiceDto.sellerId && updateInvoiceDto.sellerId !== invoice.sellerId) {
       const defaultBank = await this.prisma.bank.findFirst({
         where: {
           sellerId: updateInvoiceDto.sellerId,
@@ -274,7 +315,8 @@ export class InvoicesService {
     const updated = await this.prisma.invoice.update({
       where: { id },
       data: {
-        ...(updateInvoiceDto.sellerId && { sellerId: updateInvoiceDto.sellerId, bankId }),
+        ...(updateInvoiceDto.sellerId && { sellerId: updateInvoiceDto.sellerId }),
+        ...((updateInvoiceDto.bankId || bankId !== invoice.bankId) && { bankId }),
         ...(updateInvoiceDto.buyerId !== undefined && { buyerId: updateInvoiceDto.buyerId }),
         ...(updateInvoiceDto.legalType && { legalType: updateInvoiceDto.legalType }),
         ...(updateInvoiceDto.issueDate && { issueDate: new Date(updateInvoiceDto.issueDate), dueDate }),
@@ -596,6 +638,7 @@ export class InvoicesService {
       { header: 'Currency To', key: 'currencyTo', width: 12 },
       { header: 'Grand Total', key: 'grandTotal', width: 15 },
       { header: 'Created By', key: 'createdBy', width: 20 },
+      { header: 'Notes', key: 'notes', width: 40 },
     ];
 
     // Style header row
@@ -659,6 +702,7 @@ export class InvoicesService {
         currencyTo: invoice.currencyTo || '',
         grandTotal: Number(invoice.grandTotal) || 0,
         createdBy: invoice.user?.fullName || '',
+        notes: invoice.notes || '',
       });
 
       // Apply number format to numeric columns (shows decimals with 2 decimal places)
@@ -674,7 +718,7 @@ export class InvoicesService {
     if (invoices.length > 0) {
       worksheet.autoFilter = {
         from: { row: 1, column: 1 },
-        to: { row: invoices.length + 1, column: 17 }
+        to: { row: invoices.length + 1, column: 18 }
       };
     }
 

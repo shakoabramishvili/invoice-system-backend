@@ -21,7 +21,7 @@ export class AuthController {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: isProduction, // must be true in production
-      sameSite: 'none',     // allow cross-domain cookies
+      sameSite: isProduction ? 'none' : 'lax', // 'none' for cross-domain in production, 'lax' for local
       domain: isProduction ? '.interavia.us' : undefined, // share between api. and main domain
       path: '/',
       maxAge: 2 * 60 * 60 * 1000, // 2 hours
@@ -31,7 +31,7 @@ export class AuthController {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'none',
+      sameSite: isProduction ? 'none' : 'lax',
       domain: isProduction ? '.interavia.us' : undefined,
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days

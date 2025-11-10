@@ -26,8 +26,8 @@ export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
   @Post('single')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Upload a single file (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload a single file (Admin, Manager & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -68,8 +68,8 @@ export class UploadController {
   }
 
   @Post('multiple')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Upload multiple files (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload multiple files (Admin, Manager & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -113,8 +113,8 @@ export class UploadController {
   }
 
   @Post('image')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Upload an image file (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload an image file (Admin, Manager & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -154,8 +154,8 @@ export class UploadController {
   }
 
   @Post('document')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Upload a document (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload a document (Admin, Manager & Operator only)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -195,8 +195,8 @@ export class UploadController {
   }
 
   @Delete('file')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Delete a file by key (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete a file by key (Admin, Manager & Operator only)' })
   async deleteFile(@Body() deleteFileDto: DeleteFileDto) {
     await this.uploadService.deleteFile(deleteFileDto.key);
 
@@ -207,8 +207,8 @@ export class UploadController {
   }
 
   @Delete('files')
-  @Roles(Role.ADMIN, Role.OPERATOR)
-  @ApiOperation({ summary: 'Delete multiple files by keys (Admin & Operator only)' })
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Delete multiple files by keys (Admin, Manager & Operator only)' })
   @ApiBody({
     schema: {
       type: 'object',

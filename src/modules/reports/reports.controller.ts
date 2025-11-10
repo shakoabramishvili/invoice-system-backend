@@ -14,7 +14,7 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   @Get('sales-by-month')
-  @Roles(Role.ADMIN, Role.OPERATOR, Role.VIEWER)
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR, Role.ACCOUNTANT, Role.VIEWER)
   @ApiOperation({ summary: 'Get sales by month' })
   getSalesByMonth() {
     return this.reportsService.getSalesByMonth();

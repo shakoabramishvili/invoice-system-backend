@@ -11,7 +11,9 @@ datasource db {
 
 enum Role {
   ADMIN
+  MANAGER
   OPERATOR
+  ACCOUNTANT
   VIEWER
 }
 
@@ -36,6 +38,7 @@ enum Gender {
 
 enum InvoiceStatus {
   DRAFT
+  ISSUED
   PENDING
   SENT
   PAID
