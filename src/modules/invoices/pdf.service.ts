@@ -9,6 +9,13 @@ import { Invoice } from '@prisma/client';
 export class PdfService {
   private templateCache: Map<string, HandlebarsTemplateDelegate> = new Map();
 
+  constructor() {
+    // Register Handlebars helpers
+    Handlebars.registerHelper('inc', function(value) {
+      return parseInt(value) + 1;
+    });
+  }
+
   async generateInvoicePdf(invoice: any, templateName: string = 'default-invoice'): Promise<Buffer> {
     const html = await this.generateInvoiceHtml(invoice, templateName);
 
@@ -155,6 +162,7 @@ export class PdfService {
       dueDate,
       showLogo: invoice.showLogo,
       showStamp: invoice.showStamp,
+      showTermsAndConditions: invoice.showTermsAndConditions,
       sellerLogo: invoice.seller?.logo || null,
       sellerStamp: invoice.seller?.stamp || null,
       seller: invoice.seller,

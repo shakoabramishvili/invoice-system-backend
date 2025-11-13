@@ -146,6 +146,12 @@
       padding: 10px;
     }
 
+    .passengers-table th:first-child,
+    .passengers-table td:first-child {
+      width: 40px;
+      text-align: center;
+    }
+
     .products-table {
       width: 100%;
       border-collapse: collapse;
@@ -168,6 +174,12 @@
 
     .products-table td.right {
       text-align: right;
+    }
+
+    .products-table th:first-child,
+    .products-table td:first-child {
+      width: 40px;
+      text-align: center;
     }
 
     .totals {
@@ -350,6 +362,7 @@
   <table class="passengers-table">
     <thead>
       <tr>
+        <th>#</th>
         <th>Title</th>
         <th>First Name</th>
         <th>Last Name</th>
@@ -359,6 +372,7 @@
     <tbody>
       {{#each passengers}}
       <tr>
+        <td>{{inc @index}}</td>
         <td>{{gender}}</td>
         <td>{{firstName}}</td>
         <td>{{lastName}}</td>
@@ -372,6 +386,7 @@
   <table class="products-table">
     <thead>
       <tr>
+        <th>#</th>
         <th>Description</th>
         <th>Direction</th>
         <th>Departure / Arrival</th>
@@ -383,6 +398,7 @@
     <tbody>
       {{#each products}}
       <tr>
+        <td>{{inc @index}}</td>
         <td>{{description}}</td>
         <td>{{direction}}</td>
         <td>{{dates}}</td>
@@ -476,18 +492,13 @@
     {{/if}}
   </div>
 
-  {{#if notes}}
-  <div style="margin-top: 30px;">
-    <strong>Notes:</strong>
-    <p>{{notes}}</p>
-  </div>
-  {{/if}}
-
+  {{#if showTermsAndConditions}}
   {{#if termsAndConditions}}
-  <div style="margin-top: 20px;">
+  <div style="margin-top: 30px;">
     <strong>Terms and Conditions:</strong>
     <p>{{termsAndConditions}}</p>
   </div>
+  {{/if}}
   {{/if}}
 </body>
 </html>

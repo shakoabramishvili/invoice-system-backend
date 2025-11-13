@@ -224,8 +224,9 @@ model Invoice {
   currencyTo         String?
   grandTotal         Decimal        @db.Decimal(10,2)
 
-  showLogo           Boolean        @default(true)
-  showStamp          Boolean        @default(true)
+  showLogo              Boolean        @default(true)
+  showStamp             Boolean        @default(true)
+  showTermsAndConditions Boolean       @default(false)
 
   description        String?        @db.Text
   notes              String?        @db.Text
