@@ -99,6 +99,11 @@ export class UpdateInvoiceDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
+  @IsBoolean()
+  showTermsAndConditions?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   description?: string;
 

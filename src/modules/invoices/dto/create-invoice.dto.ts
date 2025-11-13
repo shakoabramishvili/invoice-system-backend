@@ -88,6 +88,10 @@ export class CreateInvoiceDto {
   @IsBoolean()
   showStamp: boolean;
 
+  @ApiProperty({ default: false })
+  @IsBoolean()
+  showTermsAndConditions: boolean;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

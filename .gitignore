@@ -42,6 +42,7 @@ lerna-debug.log*
 
 # Prisma
 /generated/prisma
+prisma/schema.prisma
 
 # Temp files
 *.tmp
