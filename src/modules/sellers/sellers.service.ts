@@ -51,8 +51,8 @@ export class SellersService {
     // Validate banks if provided
     if (banks && banks.length > 0) {
       for (const bank of banks) {
-        if (!bank.name || !bank.swift || !bank.address || !bank.accountNumber) {
-          throw new BadRequestException('Each bank must have name, swift, address, and accountNumber');
+        if (!bank.name || !bank.swift || !bank.address || !bank.accountNumberGEL) {
+          throw new BadRequestException('Each bank must have name, swift, address, and accountNumberGEL');
         }
       }
     }
@@ -81,7 +81,9 @@ export class SellersService {
               name: bank.name,
               swift: bank.swift,
               address: bank.address,
-              accountNumber: bank.accountNumber,
+              accountNumberGEL: bank.accountNumberGEL,
+              accountNumberUSD: bank.accountNumberUSD,
+              accountNumberEUR: bank.accountNumberEUR,
               intermediaryBankName: bank.intermediaryBankName,
               intermediaryBankSwift: bank.intermediaryBankSwift,
               // Only the first bank marked as default will be default
@@ -270,8 +272,8 @@ export class SellersService {
     // Validate banks if provided
     if (banks && banks.length > 0) {
       for (const bank of banks) {
-        if (!bank.name || !bank.swift || !bank.address || !bank.accountNumber) {
-          throw new BadRequestException('Each bank must have name, swift, address, and accountNumber');
+        if (!bank.name || !bank.swift || !bank.address || !bank.accountNumberGEL) {
+          throw new BadRequestException('Each bank must have name, swift, address, and accountNumberGEL');
         }
       }
     }
@@ -328,7 +330,9 @@ export class SellersService {
                 name: bank.name,
                 swift: bank.swift,
                 address: bank.address,
-                accountNumber: bank.accountNumber,
+                accountNumberGEL: bank.accountNumberGEL,
+                accountNumberUSD: bank.accountNumberUSD,
+                accountNumberEUR: bank.accountNumberEUR,
                 intermediaryBankName: bank.intermediaryBankName,
                 intermediaryBankSwift: bank.intermediaryBankSwift,
                 isDefault: bank.isDefault || false,
@@ -342,7 +346,9 @@ export class SellersService {
                 name: bank.name,
                 swift: bank.swift,
                 address: bank.address,
-                accountNumber: bank.accountNumber,
+                accountNumberGEL: bank.accountNumberGEL,
+                accountNumberUSD: bank.accountNumberUSD,
+                accountNumberEUR: bank.accountNumberEUR,
                 intermediaryBankName: bank.intermediaryBankName,
                 intermediaryBankSwift: bank.intermediaryBankSwift,
                 isDefault: hasDefault ? (bank.isDefault || false) : (existingBanks.length === 0 && !defaultSet),

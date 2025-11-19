@@ -25,10 +25,20 @@ export class BankNestedDto {
   @IsNotEmpty()
   address: string;
 
-  @ApiProperty({ example: 'GE29NB0000000101904917', description: 'Account number / IBAN' })
+  @ApiProperty({ example: 'GE29NB0000000101904917', description: 'Account number / IBAN in GEL' })
   @IsString()
   @IsNotEmpty()
-  accountNumber: string;
+  accountNumberGEL: string;
+
+  @ApiProperty({ example: 'GE29NB0000000101904918', description: 'Account number / IBAN in USD', required: false })
+  @IsOptional()
+  @IsString()
+  accountNumberUSD?: string;
+
+  @ApiProperty({ example: 'GE29NB0000000101904919', description: 'Account number / IBAN in EUR', required: false })
+  @IsOptional()
+  @IsString()
+  accountNumberEUR?: string;
 
   @ApiProperty({
     example: 'JP Morgan Chase Bank',

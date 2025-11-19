@@ -64,7 +64,9 @@ export class CreateSellerDto {
       name: 'Bank of Georgia',
       swift: 'BAGAGE22',
       address: '3 Pushkin Street',
-      accountNumber: 'GE29NB0000000101904917',
+      accountNumberGEL: 'GE29NB0000000101904917',
+      accountNumberUSD: 'GE29NB0000000101904918',
+      accountNumberEUR: 'GE29NB0000000101904919',
       isDefault: true
     }])
   })

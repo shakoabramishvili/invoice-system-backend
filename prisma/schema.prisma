@@ -166,7 +166,9 @@ model Bank {
   name                    String
   swift                   String
   address                 String   @db.Text
-  accountNumber           String
+  accountNumberGEL        String
+  accountNumberUSD        String?
+  accountNumberEUR        String?
 
   intermediaryBankName    String?
   intermediaryBankSwift   String?

@@ -72,7 +72,9 @@ export class BanksService {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { swift: { contains: search, mode: 'insensitive' } },
-        { accountNumber: { contains: search, mode: 'insensitive' } },
+        { accountNumberGEL: { contains: search, mode: 'insensitive' } },
+        { accountNumberUSD: { contains: search, mode: 'insensitive' } },
+        { accountNumberEUR: { contains: search, mode: 'insensitive' } },
       ];
     }
 
