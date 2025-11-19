@@ -179,10 +179,31 @@ export class InvoicesService {
       where.buyerId = filters.buyerId;
     }
     if (filters?.search && filters.search.trim() !== '') {
-      where.OR = [
+      const searchTerms = filters.search.trim().split(/\s+/);
+      const orConditions: any[] = [
         { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
+        { buyer: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { passengers: { some: { firstName: { contains: filters.search, mode: 'insensitive' } } } },
+        { passengers: { some: { lastName: { contains: filters.search, mode: 'insensitive' } } } },
       ];
+
+      // If search has multiple words, also search for first name + last name combination
+      if (searchTerms.length >= 2) {
+        const firstName = searchTerms[0];
+        const lastName = searchTerms.slice(1).join(' ');
+        orConditions.push({
+          passengers: {
+            some: {
+              AND: [
+                { firstName: { contains: firstName, mode: 'insensitive' } },
+                { lastName: { contains: lastName, mode: 'insensitive' } },
+              ],
+            },
+          },
+        });
+      }
+
+      where.OR = orConditions;
     }
     if (filters?.startDate || filters?.endDate) {
       where.issueDate = {};
@@ -528,10 +549,31 @@ export class InvoicesService {
       where.buyerId = filters.buyerId;
     }
     if (filters?.search && filters.search.trim() !== '') {
-      where.OR = [
+      const searchTerms = filters.search.trim().split(/\s+/);
+      const orConditions: any[] = [
         { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
+        { buyer: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { passengers: { some: { firstName: { contains: filters.search, mode: 'insensitive' } } } },
+        { passengers: { some: { lastName: { contains: filters.search, mode: 'insensitive' } } } },
       ];
+
+      // If search has multiple words, also search for first name + last name combination
+      if (searchTerms.length >= 2) {
+        const firstName = searchTerms[0];
+        const lastName = searchTerms.slice(1).join(' ');
+        orConditions.push({
+          passengers: {
+            some: {
+              AND: [
+                { firstName: { contains: firstName, mode: 'insensitive' } },
+                { lastName: { contains: lastName, mode: 'insensitive' } },
+              ],
+            },
+          },
+        });
+      }
+
+      where.OR = orConditions;
     }
     if (filters?.startDate || filters?.endDate) {
       where.issueDate = {};
@@ -582,10 +624,31 @@ export class InvoicesService {
       where.buyerId = filters.buyerId;
     }
     if (filters?.search && filters.search.trim() !== '') {
-      where.OR = [
+      const searchTerms = filters.search.trim().split(/\s+/);
+      const orConditions: any[] = [
         { invoiceNumber: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
+        { buyer: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { passengers: { some: { firstName: { contains: filters.search, mode: 'insensitive' } } } },
+        { passengers: { some: { lastName: { contains: filters.search, mode: 'insensitive' } } } },
       ];
+
+      // If search has multiple words, also search for first name + last name combination
+      if (searchTerms.length >= 2) {
+        const firstName = searchTerms[0];
+        const lastName = searchTerms.slice(1).join(' ');
+        orConditions.push({
+          passengers: {
+            some: {
+              AND: [
+                { firstName: { contains: firstName, mode: 'insensitive' } },
+                { lastName: { contains: lastName, mode: 'insensitive' } },
+              ],
+            },
+          },
+        });
+      }
+
+      where.OR = orConditions;
     }
     if (filters?.startDate || filters?.endDate) {
       where.issueDate = {};

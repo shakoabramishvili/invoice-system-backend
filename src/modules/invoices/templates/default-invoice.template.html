@@ -251,14 +251,15 @@
 
     .bank-info td:first-child {
       font-weight: bold;
-      width: 30%;
+      width: 40%;
       padding-right: 20px;
       text-align: left;
+      white-space: nowrap;
     }
 
     .bank-info td:nth-child(2) {
       text-align: left;
-      width: 70%;
+      width: 60%;
     }
 
     .stamp-container {
@@ -452,8 +453,16 @@
             <td>{{bank.swift}}</td>
           </tr>
           <tr>
-            <td>Account No:</td>
-            <td>{{bank.accountNumber}}</td>
+            <td>Account No. GEL:</td>
+            <td>{{bank.accountNumberGEL}}</td>
+          </tr>
+          <tr>
+            <td>Account No. USD:</td>
+            <td>{{bank.accountNumberUSD}}</td>
+          </tr>
+          <tr>
+            <td>Account No. EUR:</td>
+            <td>{{bank.accountNumberEUR}}</td>
           </tr>
           <tr>
             <td>Address:</td>
