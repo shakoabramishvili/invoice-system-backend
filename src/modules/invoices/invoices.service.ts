@@ -6,10 +6,14 @@ import { UpdateInvoiceStatusDto, UpdatePaymentStatusDto } from './dto/update-inv
 import { CancelInvoiceDto } from './dto/cancel-invoice.dto';
 import { InvoiceStatus } from '@prisma/client';
 import * as ExcelJS from 'exceljs';
+import { SalesReportService } from '../sales-report/sales-report.service';
 
 @Injectable()
 export class InvoicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private salesReportService: SalesReportService,
+  ) {}
 
   async create(createInvoiceDto: CreateInvoiceDto, currentUserId: string) {
     // Verify seller exists and is not deleted
@@ -152,6 +156,47 @@ export class InvoicesService {
         details: `Created invoice: ${invoice.invoiceNumber}`,
       },
     });
+
+    // Create sales report entries for each passenger
+    try {
+      const numberOfPassengers = invoice.passengers.length;
+      const totalAmountPerPassenger = Number(invoice.grandTotal) / numberOfPassengers;
+
+      // Get product information for sales report
+      const productName = invoice.products.map(p => p.description).join(', ');
+      const firstProduct = invoice.products[0];
+      const destination = firstProduct?.direction || null;
+      const departureArrivalDate = firstProduct?.departureDate || firstProduct?.arrivalDate || null;
+
+      // Get buyer name
+      const buyerName = invoice.buyer?.name || null;
+
+      // Create sales report entries for each passenger
+      const salesReportDtos = invoice.passengers.map(passenger => ({
+        issueDate: invoice.issueDate,
+        productName,
+        ticketNumber: null, // Will be populated manually or via another field
+        pnr: null, // Will be populated manually
+        airlineCompany: null, // Will be populated manually
+        passenger: `${passenger.firstName} ${passenger.lastName}`,
+        destination,
+        departureArrivalDate,
+        fare: null, // Will be calculated separately if needed
+        net: null, // Will be calculated separately if needed
+        serviceFee: null, // Will be calculated separately if needed
+        totalAmount: totalAmountPerPassenger,
+        invoiceNumber: invoice.invoiceNumber,
+        provider: null, // Will be populated manually
+        createdBy: currentUserId,
+        buyer: buyerName,
+        comment: invoice.notes || invoice.description || null,
+      }));
+
+      await this.salesReportService.createMany(salesReportDtos);
+    } catch (error) {
+      // Log error but don't fail the invoice creation
+      console.error('Failed to create sales report entries:', error);
+    }
 
     return {
       success: true,

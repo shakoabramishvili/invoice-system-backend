@@ -19,6 +19,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { CurrencyModule } from './modules/currency/currency.module';
+import { SalesReportModule } from './modules/sales-report/sales-report.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
     SettingsModule,
     UploadModule,
     CurrencyModule,
+    SalesReportModule,
   ],
   controllers: [AppController],
   providers: [
