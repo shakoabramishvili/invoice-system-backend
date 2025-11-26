@@ -20,6 +20,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { CurrencyModule } from './modules/currency/currency.module';
 import { SalesReportModule } from './modules/sales-report/sales-report.module';
+import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { SalesReportModule } from './modules/sales-report/sales-report.module';
     UploadModule,
     CurrencyModule,
     SalesReportModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [

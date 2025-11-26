@@ -12,6 +12,7 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
+import { N8nService } from '../../common/services/n8n.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -23,7 +24,10 @@ import { DeleteFileDto } from './dto/delete-file.dto';
 @Controller('upload')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(
+    private readonly uploadService: UploadService,
+    private readonly n8nService: N8nService,
+  ) {}
 
   @Post('single')
   @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
@@ -190,6 +194,35 @@ export class UploadController {
     return {
       success: true,
       message: 'Document uploaded successfully',
+      data: result,
+    };
+  }
+
+  @Post('n8n')
+  @Roles(Role.ADMIN, Role.MANAGER, Role.OPERATOR)
+  @ApiOperation({ summary: 'Upload a file directly to n8n webhook (Admin, Manager & Operator only)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadToN8n(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+    const result = await this.n8nService.sendFileToWebhook(file);
+
+    return {
+      success: true,
+      message: 'File sent to n8n webhook successfully',
       data: result,
     };
   }
