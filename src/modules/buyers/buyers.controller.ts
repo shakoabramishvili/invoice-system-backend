@@ -38,7 +38,7 @@ export class BuyersController {
   ) {
     return this.buyersService.findAll(
       page ? parseInt(page) : 1,
-      limit ? parseInt(limit) : 50,
+      limit ? parseInt(limit) : 500,
       search,
       legalType,
     );
