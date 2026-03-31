@@ -3,9 +3,10 @@ import { IsString, IsEnum, IsOptional, IsDateString } from 'class-validator';
 import { Gender } from '@prisma/client';
 
 export class CreatePassengerDto {
-  @ApiProperty({ enum: Gender, example: Gender.MR })
+  @ApiProperty({ enum: Gender, example: Gender.MR, required: false })
+  @IsOptional()
   @IsEnum(Gender)
-  gender: Gender;
+  gender?: Gender;
 
   @ApiProperty({ example: 'John' })
   @IsString()

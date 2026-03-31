@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsEmail, IsString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
 import { LegalType } from '@prisma/client';
 
 export class UpdateBuyerDto {
@@ -93,4 +93,13 @@ export class UpdateBuyerDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @ApiProperty({
+    example: false,
+    required: false,
+    description: 'Enable separate invoice numbering for this buyer'
+  })
+  @IsOptional()
+  @IsBoolean()
+  useSeparateInvoiceNumbering?: boolean;
 }

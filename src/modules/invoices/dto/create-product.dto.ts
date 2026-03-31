@@ -1,8 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsDateString, IsUUID, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
+  @ApiProperty({ example: 'uuid-of-passenger', required: false, description: 'Optional passenger ID to associate product with (for updates)' })
+  @IsOptional()
+  @IsUUID()
+  passengerId?: string;
+
+  @ApiProperty({ example: 0, required: false, description: 'Passenger order/index (0-based) for new invoices' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  passengerOrder?: number;
+
   @ApiProperty({ example: 'Flight Ticket: Tbilisi - Dubai' })
   @IsString()
   description: string;
