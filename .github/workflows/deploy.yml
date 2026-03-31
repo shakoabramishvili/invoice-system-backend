@@ -28,8 +28,8 @@ jobs:
           echo "Installing dependencies..."
           npm install
 
-          echo "Pulling DB schema..."
-          npx prisma db pull
+          echo "Running database migrations..."
+          npx prisma migrate deploy
 
           echo "Generating Prisma client..."
           npx prisma generate

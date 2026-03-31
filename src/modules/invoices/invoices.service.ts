@@ -79,15 +79,17 @@ export class InvoicesService {
         prisma,
         seller.prefix,
         buyer?.prefix,
+        createInvoiceDto.buyerId,
       );
 
-      // Create invoice with passengers and products
-      return await prisma.invoice.create({
+      // Create invoice with passengers first
+      const createdInvoice = await prisma.invoice.create({
         data: {
           invoiceNumber: invoiceNumberData.invoiceNumber,
           prefix: invoiceNumberData.prefix,
           year: invoiceNumberData.year,
           serial: invoiceNumberData.serial,
+          buyerSequence: invoiceNumberData.buyerSequence,
           sellerId: createInvoiceDto.sellerId,
           buyerId: createInvoiceDto.buyerId,
           legalType: createInvoiceDto.legalType,
@@ -120,25 +122,53 @@ export class InvoicesService {
               isMain: index === 0, // First passenger is main
             })),
           },
-          products: {
-            create: createInvoiceDto.products.map((p) => ({
-              description: p.description,
-              direction: p.direction,
-              departureDate: p.departureDate ? new Date(p.departureDate) : null,
-              arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
-              quantity: p.quantity,
-              price: p.price,
-              total: p.total,
-            })),
-          },
         },
+        include: {
+          passengers: { orderBy: { createdAt: 'asc' } },
+        },
+      });
+
+      // Map products to passengers based on passengerOrder
+      const productsToCreate = createInvoiceDto.products.map((p) => {
+        let passengerId = p.passengerId || null;
+
+        // If passengerOrder is provided, map to actual passenger ID
+        if (p.passengerOrder !== undefined && p.passengerOrder !== null && createdInvoice.passengers[p.passengerOrder]) {
+          passengerId = createdInvoice.passengers[p.passengerOrder].id;
+        }
+
+        return {
+          invoiceId: createdInvoice.id,
+          passengerId: passengerId,
+          description: p.description,
+          direction: p.direction,
+          departureDate: p.departureDate ? new Date(p.departureDate) : null,
+          arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
+          quantity: p.quantity,
+          price: p.price,
+          total: p.total,
+        };
+      });
+
+      // Create products with mapped passenger IDs
+      await prisma.product.createMany({
+        data: productsToCreate,
+      });
+
+      // Fetch and return complete invoice with all relations
+      return await prisma.invoice.findUnique({
+        where: { id: createdInvoice.id },
         include: {
           seller: true,
           buyer: true,
           bank: true,
           user: { select: { id: true, fullName: true, email: true } },
           passengers: true,
-          products: true,
+          products: {
+            include: {
+              passenger: true,
+            },
+          },
         },
       });
     });
@@ -229,7 +259,11 @@ export class InvoicesService {
           bank: true,
           user: { select: { id: true, fullName: true, email: true } },
           passengers: true,
-          products: true,
+          products: {
+            include: {
+              passenger: true,
+            },
+          },
         },
         orderBy,
       }),
@@ -257,7 +291,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
     });
 
@@ -326,71 +364,102 @@ export class InvoicesService {
       dueDate.setMonth(dueDate.getMonth() + 1);
     }
 
-    // Delete existing passengers and products if provided
-    if (updateInvoiceDto.passengers) {
-      await this.prisma.passenger.deleteMany({ where: { invoiceId: id } });
-    }
-    if (updateInvoiceDto.products) {
-      await this.prisma.product.deleteMany({ where: { invoiceId: id } });
-    }
+    // Use transaction for passenger and product updates
+    const updated = await this.prisma.$transaction(async (prisma) => {
+      // Delete existing passengers and products if provided
+      if (updateInvoiceDto.passengers) {
+        await prisma.passenger.deleteMany({ where: { invoiceId: id } });
+      }
+      if (updateInvoiceDto.products) {
+        await prisma.product.deleteMany({ where: { invoiceId: id } });
+      }
 
-    const updated = await this.prisma.invoice.update({
-      where: { id },
-      data: {
-        ...(updateInvoiceDto.sellerId && { sellerId: updateInvoiceDto.sellerId }),
-        ...((updateInvoiceDto.bankId || bankId !== invoice.bankId) && { bankId }),
-        ...(updateInvoiceDto.buyerId !== undefined && { buyerId: updateInvoiceDto.buyerId }),
-        ...(updateInvoiceDto.legalType && { legalType: updateInvoiceDto.legalType }),
-        ...(updateInvoiceDto.issueDate && { issueDate: new Date(updateInvoiceDto.issueDate), dueDate }),
-        ...(updateInvoiceDto.departureDate && { departureDate: new Date(updateInvoiceDto.departureDate) }),
-        ...(updateInvoiceDto.subtotal !== undefined && { subtotal: updateInvoiceDto.subtotal }),
-        ...(updateInvoiceDto.discountType !== undefined && { discountType: updateInvoiceDto.discountType }),
-        ...(updateInvoiceDto.discountValue !== undefined && { discountValue: updateInvoiceDto.discountValue }),
-        ...(updateInvoiceDto.discountAmount !== undefined && { discountAmount: updateInvoiceDto.discountAmount }),
-        ...(updateInvoiceDto.totalAfterDiscount !== undefined && { totalAfterDiscount: updateInvoiceDto.totalAfterDiscount }),
-        ...(updateInvoiceDto.currencyFrom && { currencyFrom: updateInvoiceDto.currencyFrom }),
-        ...(updateInvoiceDto.exchangeRate !== undefined && { exchangeRate: updateInvoiceDto.exchangeRate }),
-        ...(updateInvoiceDto.currencyTo !== undefined && { currencyTo: updateInvoiceDto.currencyTo }),
-        ...(updateInvoiceDto.grandTotal !== undefined && { grandTotal: updateInvoiceDto.grandTotal }),
-        ...(updateInvoiceDto.showLogo !== undefined && { showLogo: updateInvoiceDto.showLogo }),
-        ...(updateInvoiceDto.showStamp !== undefined && { showStamp: updateInvoiceDto.showStamp }),
-        ...(updateInvoiceDto.showTermsAndConditions !== undefined && { showTermsAndConditions: updateInvoiceDto.showTermsAndConditions }),
-        ...(updateInvoiceDto.description !== undefined && { description: updateInvoiceDto.description }),
-        ...(updateInvoiceDto.notes !== undefined && { notes: updateInvoiceDto.notes }),
-        ...(updateInvoiceDto.termsAndConditions !== undefined && { termsAndConditions: updateInvoiceDto.termsAndConditions }),
-        ...(updateInvoiceDto.passengers && {
-          passengers: {
-            create: updateInvoiceDto.passengers.map((p, index) => ({
-              gender: p.gender,
-              firstName: p.firstName,
-              lastName: p.lastName,
-              birthDate: p.birthDate ? new Date(p.birthDate) : null,
-              isMain: index === 0, // First passenger is main
-            })),
-          },
-        }),
-        ...(updateInvoiceDto.products && {
+      // Update invoice and create new passengers
+      const updatedInvoice = await prisma.invoice.update({
+        where: { id },
+        data: {
+          ...(updateInvoiceDto.sellerId && { sellerId: updateInvoiceDto.sellerId }),
+          ...((updateInvoiceDto.bankId || bankId !== invoice.bankId) && { bankId }),
+          ...(updateInvoiceDto.buyerId !== undefined && { buyerId: updateInvoiceDto.buyerId }),
+          ...(updateInvoiceDto.legalType && { legalType: updateInvoiceDto.legalType }),
+          ...(updateInvoiceDto.issueDate && { issueDate: new Date(updateInvoiceDto.issueDate), dueDate }),
+          ...(updateInvoiceDto.departureDate && { departureDate: new Date(updateInvoiceDto.departureDate) }),
+          ...(updateInvoiceDto.subtotal !== undefined && { subtotal: updateInvoiceDto.subtotal }),
+          ...(updateInvoiceDto.discountType !== undefined && { discountType: updateInvoiceDto.discountType }),
+          ...(updateInvoiceDto.discountValue !== undefined && { discountValue: updateInvoiceDto.discountValue }),
+          ...(updateInvoiceDto.discountAmount !== undefined && { discountAmount: updateInvoiceDto.discountAmount }),
+          ...(updateInvoiceDto.totalAfterDiscount !== undefined && { totalAfterDiscount: updateInvoiceDto.totalAfterDiscount }),
+          ...(updateInvoiceDto.currencyFrom && { currencyFrom: updateInvoiceDto.currencyFrom }),
+          ...(updateInvoiceDto.exchangeRate !== undefined && { exchangeRate: updateInvoiceDto.exchangeRate }),
+          ...(updateInvoiceDto.currencyTo !== undefined && { currencyTo: updateInvoiceDto.currencyTo }),
+          ...(updateInvoiceDto.grandTotal !== undefined && { grandTotal: updateInvoiceDto.grandTotal }),
+          ...(updateInvoiceDto.showLogo !== undefined && { showLogo: updateInvoiceDto.showLogo }),
+          ...(updateInvoiceDto.showStamp !== undefined && { showStamp: updateInvoiceDto.showStamp }),
+          ...(updateInvoiceDto.showTermsAndConditions !== undefined && { showTermsAndConditions: updateInvoiceDto.showTermsAndConditions }),
+          ...(updateInvoiceDto.description !== undefined && { description: updateInvoiceDto.description }),
+          ...(updateInvoiceDto.notes !== undefined && { notes: updateInvoiceDto.notes }),
+          ...(updateInvoiceDto.termsAndConditions !== undefined && { termsAndConditions: updateInvoiceDto.termsAndConditions }),
+          ...(updateInvoiceDto.passengers && {
+            passengers: {
+              create: updateInvoiceDto.passengers.map((p, index) => ({
+                gender: p.gender,
+                firstName: p.firstName,
+                lastName: p.lastName,
+                birthDate: p.birthDate ? new Date(p.birthDate) : null,
+                isMain: index === 0, // First passenger is main
+              })),
+            },
+          }),
+        },
+        include: {
+          passengers: { orderBy: { createdAt: 'asc' } },
+        },
+      });
+
+      // Create products with passenger mapping if products provided
+      if (updateInvoiceDto.products) {
+        const productsToCreate = updateInvoiceDto.products.map((p) => {
+          let passengerId = p.passengerId || null;
+
+          // If passengerOrder is provided, map to actual passenger ID
+          if (p.passengerOrder !== undefined && p.passengerOrder !== null && updatedInvoice.passengers[p.passengerOrder]) {
+            passengerId = updatedInvoice.passengers[p.passengerOrder].id;
+          }
+
+          return {
+            invoiceId: updatedInvoice.id,
+            passengerId: passengerId,
+            description: p.description,
+            direction: p.direction,
+            departureDate: p.departureDate ? new Date(p.departureDate) : null,
+            arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
+            quantity: p.quantity,
+            price: p.price,
+            total: p.total,
+          };
+        });
+
+        await prisma.product.createMany({
+          data: productsToCreate,
+        });
+      }
+
+      // Fetch and return complete invoice with all relations
+      return await prisma.invoice.findUnique({
+        where: { id: updatedInvoice.id },
+        include: {
+          seller: true,
+          buyer: true,
+          bank: true,
+          user: { select: { id: true, fullName: true, email: true } },
+          passengers: true,
           products: {
-            create: updateInvoiceDto.products.map((p) => ({
-              description: p.description,
-              direction: p.direction,
-              departureDate: p.departureDate ? new Date(p.departureDate) : null,
-              arrivalDate: p.arrivalDate ? new Date(p.arrivalDate) : null,
-              quantity: p.quantity,
-              price: p.price,
-              total: p.total,
-            })),
+            include: {
+              passenger: true,
+            },
           },
-        }),
-      },
-      include: {
-        seller: true,
-        buyer: true,
-        bank: true,
-        user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
-        products: true,
-      },
+        },
+      });
     });
 
     await this.prisma.activityLog.create({
@@ -426,7 +495,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
     });
 
@@ -463,7 +536,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
     });
 
@@ -504,7 +581,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
     });
 
@@ -597,7 +678,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
       orderBy,
     });
@@ -672,7 +757,11 @@ export class InvoicesService {
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
         passengers: true,
-        products: true,
+        products: {
+          include: {
+            passenger: true,
+          },
+        },
       },
       orderBy,
     });
@@ -851,11 +940,13 @@ export class InvoicesService {
     prisma: any,
     sellerPrefix: string,
     buyerPrefix?: string,
+    buyerId?: string,
   ): Promise<{
     invoiceNumber: string;
     prefix: string;
     year: string;
     serial: number;
+    buyerSequence?: number;
   }> {
     // Generate prefix: INV-{SellerPrefix}{BuyerPrefix?}
     const prefix = `INV-${sellerPrefix}${buyerPrefix || ''}`;
@@ -864,7 +955,7 @@ export class InvoicesService {
     const currentYear = new Date().getFullYear();
     const year = currentYear.toString().slice(-2);
 
-    // Find the last invoice for this year (within transaction)
+    // STEP 1: Get global serial (always increments)
     const lastInvoice = await prisma.invoice.findFirst({
       where: {
         year: year,
@@ -878,14 +969,49 @@ export class InvoicesService {
     // Pad serial to 4 digits
     const paddedSerial = serial.toString().padStart(4, '0');
 
-    // Generate full invoice number: INV-{SellerPrefix}{BuyerPrefix?}-{Year}/{Serial}
-    const invoiceNumber = `${prefix}-${year}/${paddedSerial}`;
+    // STEP 2: Check if buyer has separate numbering enabled
+    let buyerSequence: number | undefined;
+    let invoiceNumber: string;
+
+    if (buyerId) {
+      const buyer = await prisma.buyer.findUnique({
+        where: { id: buyerId },
+        select: { useSeparateInvoiceNumbering: true }
+      });
+
+      if (buyer?.useSeparateInvoiceNumbering) {
+        // Get buyer's last sequence number for this year
+        const lastBuyerInvoice = await prisma.invoice.findFirst({
+          where: {
+            buyerId: buyerId,
+            year: year,
+            buyerSequence: { not: null },
+          },
+          orderBy: { buyerSequence: 'desc' },
+        });
+
+        // Start from 1 (as per requirement)
+        buyerSequence = lastBuyerInvoice?.buyerSequence
+          ? lastBuyerInvoice.buyerSequence + 1
+          : 1;
+
+        // Format with buyer sequence: INV-IAGFF-26/0001/1
+        invoiceNumber = `${prefix}-${year}/${paddedSerial}/${buyerSequence}`;
+      } else {
+        // Normal format (no buyer sequence)
+        invoiceNumber = `${prefix}-${year}/${paddedSerial}`;
+      }
+    } else {
+      // Individual invoice (no buyer)
+      invoiceNumber = `${prefix}-${year}/${paddedSerial}`;
+    }
 
     return {
       invoiceNumber,
       prefix,
       year,
       serial,
+      buyerSequence,
     };
   }
 }

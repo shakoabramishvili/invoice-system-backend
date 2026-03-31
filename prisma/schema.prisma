@@ -143,6 +143,8 @@ model Buyer {
   address         String    @db.Text
   country         String    @default("Georgia")
 
+  useSeparateInvoiceNumbering Boolean @default(false)
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?
@@ -192,8 +194,9 @@ model Invoice {
 
   prefix             String?        // "INV-IAGFF" or "INV-IAGFFGFF"
   year               String?        // "25"
-  serial             Int?           // 1
-  invoiceNumber      String         @unique // "INV-IAGFF-25/0001"
+  serial             Int?           // 1 (global serial)
+  buyerSequence      Int?           // 1, 2, 3... (buyer's sequential count)
+  invoiceNumber      String         @unique // "INV-IAGFF-25/0001" or "INV-IAGFF-25/0001/1"
 
   sellerId           String
   seller             Seller         @relation(fields: [sellerId], references: [id])
@@ -245,6 +248,7 @@ model Invoice {
   products           Product[]
 
   @@unique([year, serial])
+  @@unique([buyerId, year, buyerSequence])
   @@index([invoiceNumber])
   @@index([status])
   @@index([issueDate])
@@ -262,11 +266,13 @@ model Passenger {
   invoiceId   String
   invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  gender      Gender
+  gender      Gender?
   firstName   String
   lastName    String
   birthDate   DateTime?
   isMain      Boolean   @default(false)
+
+  products    Product[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -284,6 +290,9 @@ model Product {
   invoiceId     String
   invoice       Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
+  passengerId   String?
+  passenger     Passenger? @relation(fields: [passengerId], references: [id], onDelete: SetNull)
+
   description   String
   direction     String?
   departureDate DateTime?
@@ -297,6 +306,7 @@ model Product {
   updatedAt     DateTime  @updatedAt
 
   @@index([invoiceId])
+  @@index([passengerId])
   @@map("products")
 }
 

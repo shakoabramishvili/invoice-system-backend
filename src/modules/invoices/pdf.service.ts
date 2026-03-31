@@ -111,7 +111,7 @@ export class PdfService {
       discountLabel = `Discount (${invoice.discountValue.toFixed(2)}):`;
     }
 
-    // Format passengers
+    // Format passengers and create ID to index mapping
     const passengers = (invoice.passengers || []).map(p => ({
       gender: p.gender,
       firstName: p.firstName,
@@ -119,6 +119,14 @@ export class PdfService {
       birthDate: p.birthDate ? formatDate(new Date(p.birthDate)) : '',
       isMain: p.isMain,
     }));
+
+    // Create passenger ID to index mapping for product ordering
+    const passengerIdToIndex = new Map<string, number>();
+    (invoice.passengers || []).forEach((p, index) => {
+      if (p.id) {
+        passengerIdToIndex.set(p.id, index);
+      }
+    });
 
     // Handle buyer logic for individuals without a registered buyer
     let buyer = invoice.buyer;
@@ -142,8 +150,24 @@ export class PdfService {
       }
     }
 
+    // Sort products by passenger order before formatting
+    const sortedProducts = [...(invoice.products || [])].sort((a, b) => {
+      const aPassengerId = a.passengerId;
+      const bPassengerId = b.passengerId;
+
+      // Products without passengers go to the end
+      if (!aPassengerId && !bPassengerId) return 0;
+      if (!aPassengerId) return 1;
+      if (!bPassengerId) return -1;
+
+      // Sort by passenger order
+      const aIndex = passengerIdToIndex.get(aPassengerId) ?? 999;
+      const bIndex = passengerIdToIndex.get(bPassengerId) ?? 999;
+      return aIndex - bIndex;
+    });
+
     // Format products
-    const products = (invoice.products || []).map(p => {
+    const products = sortedProducts.map(p => {
       const departureDate = p.departureDate ? formatDate(new Date(p.departureDate)) : '';
       const arrivalDate = p.arrivalDate ? formatDate(new Date(p.arrivalDate)) : '';
       return {
