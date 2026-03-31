@@ -14,8 +14,11 @@ jobs:
         run: |
           cd /var/www/invoice-system-backend
 
-          echo "Pulling latest code from main..."
-          git pull origin main
+          echo "Fetching latest code from main..."
+          git fetch origin main
+
+          echo "Resetting to match remote main branch..."
+          git reset --hard origin/main
 
           echo "Stopping PM2 backend..."
           sudo pm2 stop backend
