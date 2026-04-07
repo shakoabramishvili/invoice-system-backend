@@ -82,7 +82,7 @@ export class InvoicesService {
         createInvoiceDto.buyerId,
       );
 
-      // Create invoice with passengers first
+      // Create invoice first
       const createdInvoice = await prisma.invoice.create({
         data: {
           invoiceNumber: invoiceNumberData.invoiceNumber,
@@ -113,28 +113,40 @@ export class InvoicesService {
           description: createInvoiceDto.description,
           notes: createInvoiceDto.notes,
           termsAndConditions: createInvoiceDto.termsAndConditions,
-          passengers: {
-            create: createInvoiceDto.passengers.map((p, index) => ({
-              gender: p.gender,
-              firstName: p.firstName,
-              lastName: p.lastName,
-              birthDate: p.birthDate ? new Date(p.birthDate) : null,
-              isMain: index === 0, // First passenger is main
-            })),
-          },
-        },
-        include: {
-          passengers: { orderBy: { createdAt: 'asc' } },
         },
       });
+
+      // Create passengers with incremental timestamps to ensure proper ordering
+      const baseTimestamp = new Date();
+      const createdPassengers = [];
+
+      for (let index = 0; index < createInvoiceDto.passengers.length; index++) {
+        const p = createInvoiceDto.passengers[index];
+        // Add index milliseconds to ensure unique, ordered timestamps
+        const passengerTimestamp = new Date(baseTimestamp.getTime() + index);
+
+        const passenger = await prisma.passenger.create({
+          data: {
+            invoiceId: createdInvoice.id,
+            gender: p.gender,
+            firstName: p.firstName,
+            lastName: p.lastName,
+            birthDate: p.birthDate ? new Date(p.birthDate) : null,
+            isMain: index === 0,
+            createdAt: passengerTimestamp,
+          },
+        });
+
+        createdPassengers.push(passenger);
+      }
 
       // Map products to passengers based on passengerOrder
       const productsToCreate = createInvoiceDto.products.map((p) => {
         let passengerId = p.passengerId || null;
 
         // If passengerOrder is provided, map to actual passenger ID
-        if (p.passengerOrder !== undefined && p.passengerOrder !== null && createdInvoice.passengers[p.passengerOrder]) {
-          passengerId = createdInvoice.passengers[p.passengerOrder].id;
+        if (p.passengerOrder !== undefined && p.passengerOrder !== null && createdPassengers[p.passengerOrder]) {
+          passengerId = createdPassengers[p.passengerOrder].id;
         }
 
         return {
@@ -380,13 +392,19 @@ export class InvoicesService {
           orderBy: { createdAt: 'asc' },
         });
 
-        // Update existing passengers in order, or create new ones
-        const passengerUpdates = updateInvoiceDto.passengers.map(async (p, index) => {
+        // Calculate base timestamp for new passengers (after last existing passenger)
+        const baseTimestamp = existingPassengers.length > 0
+          ? new Date(existingPassengers[existingPassengers.length - 1].createdAt.getTime() + 1)
+          : new Date();
+
+        // Update existing passengers in order, or create new ones sequentially
+        for (let index = 0; index < updateInvoiceDto.passengers.length; index++) {
+          const p = updateInvoiceDto.passengers[index];
           const existingPassenger = existingPassengers[index];
 
           if (existingPassenger) {
             // Update existing passenger to preserve createdAt
-            return prisma.passenger.update({
+            await prisma.passenger.update({
               where: { id: existingPassenger.id },
               data: {
                 gender: p.gender,
@@ -397,8 +415,11 @@ export class InvoicesService {
               },
             });
           } else {
-            // Create new passenger if we have more passengers than before
-            return prisma.passenger.create({
+            // Create new passenger with timestamp after existing passengers
+            const newPassengerIndex = index - existingPassengers.length;
+            const passengerTimestamp = new Date(baseTimestamp.getTime() + newPassengerIndex);
+
+            await prisma.passenger.create({
               data: {
                 invoiceId: id,
                 gender: p.gender,
@@ -406,12 +427,11 @@ export class InvoicesService {
                 lastName: p.lastName,
                 birthDate: p.birthDate ? new Date(p.birthDate) : null,
                 isMain: index === 0,
+                createdAt: passengerTimestamp,
               },
             });
           }
-        });
-
-        await Promise.all(passengerUpdates);
+        }
 
         // Delete extra passengers if we have fewer passengers than before
         if (existingPassengers.length > updateInvoiceDto.passengers.length) {
