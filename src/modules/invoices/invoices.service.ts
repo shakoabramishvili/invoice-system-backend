@@ -163,7 +163,9 @@ export class InvoicesService {
           buyer: true,
           bank: true,
           user: { select: { id: true, fullName: true, email: true } },
-          passengers: true,
+          passengers: {
+            orderBy: { createdAt: 'asc' },
+          },
           products: {
             include: {
               passenger: true,
@@ -258,7 +260,9 @@ export class InvoicesService {
           buyer: true,
           bank: true,
           user: { select: { id: true, fullName: true, email: true } },
-          passengers: true,
+          passengers: {
+            orderBy: { createdAt: 'asc' },
+          },
           products: {
             include: {
               passenger: true,
@@ -290,7 +294,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
@@ -452,7 +458,9 @@ export class InvoicesService {
           buyer: true,
           bank: true,
           user: { select: { id: true, fullName: true, email: true } },
-          passengers: true,
+          passengers: {
+            orderBy: { createdAt: 'asc' },
+          },
           products: {
             include: {
               passenger: true,
@@ -494,7 +502,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
@@ -535,7 +545,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
@@ -580,7 +592,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
@@ -677,7 +691,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
@@ -756,7 +772,9 @@ export class InvoicesService {
         buyer: true,
         bank: true,
         user: { select: { id: true, fullName: true, email: true } },
-        passengers: true,
+        passengers: {
+          orderBy: { createdAt: 'asc' },
+        },
         products: {
           include: {
             passenger: true,
