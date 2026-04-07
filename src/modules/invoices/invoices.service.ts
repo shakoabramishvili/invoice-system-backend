@@ -372,15 +372,64 @@ export class InvoicesService {
 
     // Use transaction for passenger and product updates
     const updated = await this.prisma.$transaction(async (prisma) => {
-      // Delete existing passengers and products if provided
+      // Handle passengers update - preserve existing passengers and their createdAt
       if (updateInvoiceDto.passengers) {
-        await prisma.passenger.deleteMany({ where: { invoiceId: id } });
+        // Get existing passengers ordered by createdAt (oldest first)
+        const existingPassengers = await prisma.passenger.findMany({
+          where: { invoiceId: id },
+          orderBy: { createdAt: 'asc' },
+        });
+
+        // Update existing passengers in order, or create new ones
+        const passengerUpdates = updateInvoiceDto.passengers.map(async (p, index) => {
+          const existingPassenger = existingPassengers[index];
+
+          if (existingPassenger) {
+            // Update existing passenger to preserve createdAt
+            return prisma.passenger.update({
+              where: { id: existingPassenger.id },
+              data: {
+                gender: p.gender,
+                firstName: p.firstName,
+                lastName: p.lastName,
+                birthDate: p.birthDate ? new Date(p.birthDate) : null,
+                isMain: index === 0,
+              },
+            });
+          } else {
+            // Create new passenger if we have more passengers than before
+            return prisma.passenger.create({
+              data: {
+                invoiceId: id,
+                gender: p.gender,
+                firstName: p.firstName,
+                lastName: p.lastName,
+                birthDate: p.birthDate ? new Date(p.birthDate) : null,
+                isMain: index === 0,
+              },
+            });
+          }
+        });
+
+        await Promise.all(passengerUpdates);
+
+        // Delete extra passengers if we have fewer passengers than before
+        if (existingPassengers.length > updateInvoiceDto.passengers.length) {
+          const passengersToDelete = existingPassengers.slice(updateInvoiceDto.passengers.length);
+          await prisma.passenger.deleteMany({
+            where: {
+              id: { in: passengersToDelete.map(p => p.id) },
+            },
+          });
+        }
       }
+
+      // Delete existing products if provided
       if (updateInvoiceDto.products) {
         await prisma.product.deleteMany({ where: { invoiceId: id } });
       }
 
-      // Update invoice and create new passengers
+      // Update invoice without nested passenger creation
       const updatedInvoice = await prisma.invoice.update({
         where: { id },
         data: {
@@ -405,17 +454,6 @@ export class InvoicesService {
           ...(updateInvoiceDto.description !== undefined && { description: updateInvoiceDto.description }),
           ...(updateInvoiceDto.notes !== undefined && { notes: updateInvoiceDto.notes }),
           ...(updateInvoiceDto.termsAndConditions !== undefined && { termsAndConditions: updateInvoiceDto.termsAndConditions }),
-          ...(updateInvoiceDto.passengers && {
-            passengers: {
-              create: updateInvoiceDto.passengers.map((p, index) => ({
-                gender: p.gender,
-                firstName: p.firstName,
-                lastName: p.lastName,
-                birthDate: p.birthDate ? new Date(p.birthDate) : null,
-                isMain: index === 0, // First passenger is main
-              })),
-            },
-          }),
         },
         include: {
           passengers: { orderBy: { createdAt: 'asc' } },
